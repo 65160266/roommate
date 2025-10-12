@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/match.css">
+    <title><%= title %> - RoomMate</title>
+</head>
+<body class="bg-gray-100">
+    <%- include('partials/homeheader') %>
+
+    <!-- Flash Messages -->
+    <% if (typeof session !== 'undefined' && session.flash) { %>
+        <% if (session.flash.success) { %>
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                <%= session.flash.success %>
+            </div>
+        <% } %>
+        <% if (session.flash.error) { %>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <%= session.flash.error %>
+            </div>
+        <% } %>
+    <% } %>
+
+    <!-- Navigation Tabs -->
+    <div class="container mx-auto mt-6">
+        <div class="flex space-x-4 mb-6">
+            <a href="/match" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Find Roommates</a>
+            <a href="/match/in-progress" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">In-Progress</a>
+            <a href="/match/matched" class="px-4 py-2 bg-blue-600 text-white rounded">Matched</a>
+        </div>
+
+        <h2 class="text-2xl font-bold mb-6">Your Matched Roommates</h2>
+
+        <% if (confirmedMatches && confirmedMatches.length > 0) { %>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <% confirmedMatches.forEach(match => { %>
+                    <div class="bg-white shadow-lg rounded-lg p-6 border-l-4 border-green-500 hover:shadow-xl transition-shadow">
+                        <div class="text-center mb-4">
+                            <div class="relative">
+                                <img src="<%= match.matched_user_image || '/images/default-avatar.png' %>" 
+                                     alt="<%= match.matched_user_name %>" 
+                                     class="w-24 h-24 rounded-full mx-auto mb-3 object-cover">
+                                <div class="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                    <span class="text-white text-sm">✓</span>
+                                </div>
+                            </div>
+                            <h4 class="text-xl font-semibold text-gray-800 mb-2">
+                                <%= match.matched_user_name %>
+                            </h4>
+                            <p class="text-gray-600 text-sm mb-1">
+                                <span class="font-medium">Faculty:</span> <%= match.matched_user_faculty || 'Not specified' %>
+                            </p>
+                            <p class="text-gray-600 text-sm mb-1">
+                                <span class="font-medium">Major:</span> <%= match.matched_user_major || 'Not specified' %>
+                            </p>
+                            <p class="text-gray-600 text-sm mb-3">
+                                <span class="font-medium">Age:</span> <%= match.matched_user_age || 'Not specified' %>
+                            </p>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800 mb-4">
+                                <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                Matched Successfully
+                            </div>
+                            <p class="text-gray-500 text-xs mb-4">
+                                Matched on <%= new Date(match.updated_at).toLocaleDateString() %>
+                            </p>
+                            
+                            <!-- Action Buttons -->
+                            <div class="space-y-2">
+                                <button class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                                    💬 Start Chat
+                                </button>
+                                <button class="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors">
+                                    📋 View Profile
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div class="text-center py-12">
+                <div class="text-gray-500 text-lg mb-4">
+                    <div class="text-6xl mb-4">🤝</div>
+                    <h3 class="text-xl font-semibold mb-2">No Matches Yet</h3>
+                    <p>You haven't been matched with any roommates yet.</p>
+                    <p class="mt-2">Start by browsing available roommates and sending match requests!</p>
+                </div>
+                <div class="mt-6">
+                    <a href="/match" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        Find Roommates
+                    </a>
+                </div>
+            </div>
+        <% } %>
+    </div>
+
+    <!-- Success Animation -->
+    <script>
+        // Auto-hide flash messages after 5 seconds
+        setTimeout(() => {
+            const flashMessages = document.querySelectorAll('.bg-green-100, .bg-red-100');
+            flashMessages.forEach(msg => {
+                msg.style.transition = 'opacity 0.5s';
+                msg.style.opacity = '0';
+                setTimeout(() => msg.remove(), 500);
+            });
+        }, 5000);
+
+        // Add some animation to matched cards
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.bg-white.shadow-lg');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.5s, transform 0.5s';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>

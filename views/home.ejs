@@ -6,6 +6,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/match.css">
     <style>
         
     </style>
@@ -14,55 +15,275 @@
 <body class="bg-gray-100">
     <%- include('partials/homeheader') %>
 
-
-<!-- Search Section -->
-<div class="container-search flex justify-center mt-10">
-    <form action="/search" method="get" class="flex items-center space-x-2 w-full max-w-xl">
-        <input type="text" name="q" id="search-input" placeholder="ค้นหา..." class="w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-400">
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition" id="search-btn" disabled>Search</button>
-    </form>
-</div>
-
-<!-- Filters Section (เพศ) -->
-<div class="container-filters mt-3 text-center">
-    <label><input type="radio" name="filter" value="all" checked> All Fields</label>
-    <label><input type="radio" name="filter" value="male"> ชาย</label>
-    <label><input type="radio" name="filter" value="female"> หญิง</label>
-    <label><input type="radio" name="filter" value="other"> LGBTQ+</label>
-</div>
-
-
-<div class="container mx-auto mt-6">
-  <h2 class="text-xl font-bold mb-4">ผู้ใช้ทั้งหมด</h2>
-  
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-    <% accounts.forEach(user => { %>
-      <div class="bg-white shadow-md rounded-lg p-4">
-        <img src="<%= user.image %>" alt="profile" class="w-24 h-24 rounded-full mx-auto">
-        <h3 class="text-lg font-semibold text-center mt-2">
-          <%= user.first_name %> <%= user.last_name %>
-        </h3>
-        <p class="text-sm text-gray-600 text-center">(<%= user.nickname %>)</p>
-        <p class="text-sm text-gray-500 text-center"><%= user.faculty_name %> - <%= user.majors_name %></p>
-        <p class="text-sm text-gray-500 text-center">นิสัย: <%= user.Personality || "-" %></p>
-        
-        <% if (user.Accounts_id !== userData.Accounts_id) { %>
-          <!-- ไม่ให้กดจับคู่กับตัวเอง -->
-          <form action="/match/<%= user.Accounts_id %>" method="post" class="text-center mt-3">
-            <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-              จับคู่
-            </button>
-          </form>
+    <!-- Flash Messages -->
+    <% if (typeof session !== 'undefined' && session.flash) { %>
+        <% if (session.flash.success) { %>
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 mx-4">
+                <%= session.flash.success %>
+            </div>
         <% } %>
-      </div>
-    <% }) %>
-  </div>
+        <% if (session.flash.error) { %>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 mx-4">
+                <%= session.flash.error %>
+            </div>
+        <% } %>
+    <% } %>
+
+
+<!-- Match Tabs -->
+<div class="container mx-auto mt-6">
+    <div class="flex space-x-4 mb-6">
+        <button onclick="showTab('find')" id="find-tab" class="px-4 py-2 bg-blue-600 text-white rounded">Find Roommates</button>
+        <button onclick="showTab('in-progress')" id="in-progress-tab" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">In-Progress</button>
+        <button onclick="showTab('matched')" id="matched-tab" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Matched</button>
+    </div>
+
+    <!-- Find Roommates Tab -->
+    <div id="find-content" class="tab-content">
+        <!-- Search Section -->
+        <div class="container-search flex justify-center mb-6">
+            <form action="/search" method="get" class="flex items-center space-x-2 w-full max-w-xl">
+                <input type="text" name="q" id="search-input" placeholder="ค้นหา..." class="w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-400">
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition" id="search-btn" disabled>Search</button>
+            </form>
+        </div>
+
+        <!-- Filters Section (เพศ) -->
+        <div class="container-filters mb-6 text-center">
+            <label><input type="radio" name="filter" value="all" checked> All Fields</label>
+            <label><input type="radio" name="filter" value="male"> ชาย</label>
+            <label><input type="radio" name="filter" value="female"> หญิง</label>
+            <label><input type="radio" name="filter" value="other"> LGBTQ+</label>
+        </div>
+
+        <h2 class="text-xl font-bold mb-4">ผู้ใช้ทั้งหมด</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <% if (accounts && accounts.length > 0) { %>
+                <% accounts.forEach(user => { %>
+                    <div class="bg-white shadow-md rounded-lg p-4 match-card">
+                        <img src="<%= user.image || '/images/default-avatar.png' %>" alt="profile" class="w-24 h-24 rounded-full mx-auto">
+                        <h3 class="text-lg font-semibold text-center mt-2">
+                            <%= user.first_name %> <%= user.last_name %>
+                        </h3>
+                        <p class="text-sm text-gray-600 text-center">(<%= user.nickname %>)</p>
+                        <p class="text-sm text-gray-500 text-center"><%= user.faculty_name %> - <%= user.majors_name %></p>
+                        <p class="text-sm text-gray-500 text-center">นิสัย: <%= user.Personality || "-" %></p>
+                        
+                        <% if (user.Accounts_id !== userData.Accounts_id) { %>
+                            <form action="/home/match" method="post" class="text-center mt-3">
+                                <input type="hidden" name="target_id" value="<%= user.Accounts_id %>">
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 match-btn">
+                                    จับคู่
+                                </button>
+                            </form>
+                        <% } %>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <div class="col-span-full text-center py-8">
+                    <p class="text-gray-500 text-lg">No users found.</p>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- In-Progress Tab -->
+    <div id="in-progress-content" class="tab-content hidden">
+        <h2 class="text-2xl font-bold mb-6">In-Progress Matches</h2>
+
+        <!-- Pending Requests (Received) -->
+        <div class="mb-8">
+            <h3 class="text-xl font-semibold mb-4 text-blue-600">Pending Requests (Waiting for Your Response)</h3>
+            <% if (typeof pendingMatches !== 'undefined' && pendingMatches && pendingMatches.length > 0) { %>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <% pendingMatches.forEach(match => { %>
+                        <div class="bg-white shadow-lg rounded-lg p-6 border-l-4 border-blue-500 status-pending">
+                            <div class="text-center mb-4">
+                                <img src="<%= match.requester_image || '/images/default-avatar.png' %>" 
+                                     alt="<%= match.requester_name %>" 
+                                     class="w-20 h-20 rounded-full mx-auto mb-3 object-cover">
+                                <h4 class="text-lg font-semibold text-gray-800">
+                                    <%= match.requester_name %>
+                                </h4>
+                                <p class="text-gray-600 text-sm">
+                                    <%= match.requester_faculty %> - <%= match.requester_major %>
+                                </p>
+                                <p class="text-gray-500 text-xs mt-1">
+                                    Sent <%= new Date(match.created_at).toLocaleDateString() %>
+                                </p>
+                            </div>
+                            
+                            <div class="flex space-x-2">
+                                <form action="/home/match/<%= match.match_id %>/confirm" method="POST" class="flex-1">
+                                    <button type="submit" 
+                                            class="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
+                                        ✓ Confirm
+                                    </button>
+                                </form>
+                                <form action="/home/match/<%= match.match_id %>/reject" method="POST" class="flex-1">
+                                    <button type="submit" 
+                                            class="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors">
+                                        ✗ Reject
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <div class="text-center py-8 bg-gray-50 rounded-lg">
+                    <p class="text-gray-500 text-lg">No pending requests at the moment.</p>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Sent Requests (Waiting for Response) -->
+        <div class="mb-8">
+            <h3 class="text-xl font-semibold mb-4 text-orange-600">Sent Requests (Waiting for Response)</h3>
+            <% if (typeof sentMatches !== 'undefined' && sentMatches && sentMatches.length > 0) { %>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <% sentMatches.forEach(match => { %>
+                        <div class="bg-white shadow-lg rounded-lg p-6 border-l-4 border-orange-500">
+                            <div class="text-center mb-4">
+                                <img src="<%= match.target_image || '/images/default-avatar.png' %>" 
+                                     alt="<%= match.target_name %>" 
+                                     class="w-20 h-20 rounded-full mx-auto mb-3 object-cover">
+                                <h4 class="text-lg font-semibold text-gray-800">
+                                    <%= match.target_name %>
+                                </h4>
+                                <p class="text-gray-600 text-sm">
+                                    <%= match.target_faculty %> - <%= match.target_major %>
+                                </p>
+                                <p class="text-gray-500 text-xs mt-1">
+                                    Sent <%= new Date(match.created_at).toLocaleDateString() %>
+                                </p>
+                            </div>
+                            
+                            <div class="text-center">
+                                <div class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800 mb-3">
+                                    <span class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+                                    Pending Response
+                                </div>
+                                <form action="/home/match/<%= match.match_id %>/cancel" method="POST" class="inline">
+                                    <input type="hidden" name="_method" value="DELETE">
+                                    <button type="submit" 
+                                            class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                                            onclick="return confirm('Are you sure you want to cancel this match request?')">
+                                        Cancel Request
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <div class="text-center py-8 bg-gray-50 rounded-lg">
+                    <p class="text-gray-500 text-lg">No sent requests at the moment.</p>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Matched Tab -->
+    <div id="matched-content" class="tab-content hidden">
+        <h2 class="text-2xl font-bold mb-6">Your Matched Roommates</h2>
+
+        <% if (typeof confirmedMatches !== 'undefined' && confirmedMatches && confirmedMatches.length > 0) { %>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <% confirmedMatches.forEach(match => { %>
+                    <div class="bg-white shadow-lg rounded-lg p-6 border-l-4 border-green-500 hover:shadow-xl transition-shadow status-confirmed">
+                        <div class="text-center mb-4">
+                            <div class="relative">
+                                <img src="<%= match.matched_user_image || '/images/default-avatar.png' %>" 
+                                     alt="<%= match.matched_user_name %>" 
+                                     class="w-24 h-24 rounded-full mx-auto mb-3 object-cover">
+                                <div class="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                    <span class="text-white text-sm">✓</span>
+                                </div>
+                            </div>
+                            <h4 class="text-xl font-semibold text-gray-800 mb-2">
+                                <%= match.matched_user_name %>
+                            </h4>
+                            <p class="text-gray-600 text-sm mb-1">
+                                <span class="font-medium">Faculty:</span> <%= match.matched_user_faculty || 'Not specified' %>
+                            </p>
+                            <p class="text-gray-600 text-sm mb-1">
+                                <span class="font-medium">Major:</span> <%= match.matched_user_major || 'Not specified' %>
+                            </p>
+                            <p class="text-gray-600 text-sm mb-3">
+                                <span class="font-medium">Age:</span> <%= match.matched_user_age || 'Not specified' %>
+                            </p>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800 mb-4">
+                                <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                Matched Successfully
+                            </div>
+                            <p class="text-gray-500 text-xs mb-4">
+                                Matched on <%= new Date(match.updated_at).toLocaleDateString() %>
+                            </p>
+                            
+                            <!-- Action Buttons -->
+                            <div class="space-y-2">
+                                <form action="/chat/start/<%= match.matched_user_id %>" method="POST" class="w-full">
+                                    <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                                        💬 Start Chat
+                                    </button>
+                                </form>
+                                <button class="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors">
+                                    📋 View Profile
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div class="text-center py-12">
+                <div class="text-gray-500 text-lg mb-4">
+                    <div class="text-6xl mb-4">🤝</div>
+                    <h3 class="text-xl font-semibold mb-2">No Matches Yet</h3>
+                    <p>You haven't been matched with any roommates yet.</p>
+                    <p class="mt-2">Start by browsing available roommates and sending match requests!</p>
+                </div>
+                <div class="mt-6">
+                    <button onclick="showTab('find')" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        Find Roommates
+                    </button>
+                </div>
+            </div>
+        <% } %>
+    </div>
 </div>
 
 
 
 <script>
-    // ทำการตรวจสอบช่องค้นหาทุกครั้งที่ผู้ใช้พิมพ์ข้อมูล
+    // Tab functionality
+    function showTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+        });
+        
+        // Remove active class from all tabs
+        document.querySelectorAll('[id$="-tab"]').forEach(tab => {
+            tab.classList.remove('bg-blue-600', 'text-white');
+            tab.classList.add('bg-gray-300', 'text-gray-700');
+        });
+        
+        // Show selected tab content
+        document.getElementById(tabName + '-content').classList.remove('hidden');
+        
+        // Add active class to selected tab
+        const activeTab = document.getElementById(tabName + '-tab');
+        activeTab.classList.remove('bg-gray-300', 'text-gray-700');
+        activeTab.classList.add('bg-blue-600', 'text-white');
+    }
+
+    // Search functionality
     document.getElementById('search-input').addEventListener('input', function() {
         const searchValue = document.getElementById('search-input').value;
         const searchBtn = document.getElementById('search-btn');
@@ -84,6 +305,38 @@
         }
         return true; // ส่งฟอร์มหากมีข้อมูล
     }
+
+    // Auto-hide flash messages after 5 seconds
+    setTimeout(() => {
+        const flashMessages = document.querySelectorAll('.bg-green-100, .bg-red-100');
+        flashMessages.forEach(msg => {
+            msg.style.transition = 'opacity 0.5s';
+            msg.style.opacity = '0';
+            setTimeout(() => msg.remove(), 500);
+        });
+    }, 5000);
+
+    // Handle form method override for DELETE requests
+    document.addEventListener('DOMContentLoaded', function() {
+        const forms = document.querySelectorAll('form[method="POST"]');
+        forms.forEach(form => {
+            const methodInput = form.querySelector('input[name="_method"]');
+            if (methodInput && methodInput.value === 'DELETE') {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const formData = new FormData(form);
+                    formData.delete('_method');
+                    
+                    fetch(form.action, {
+                        method: 'DELETE',
+                        body: formData
+                    }).then(() => {
+                        location.reload();
+                    });
+                });
+            }
+        });
+    });
 
 </script>
 

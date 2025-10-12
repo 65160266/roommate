@@ -12,7 +12,7 @@ exports.getAccount = async (req, res) => {
     const [rows] = await Account.queryaccount(Register_id);
     if (rows) {
       // ถ้ามีข้อมูลแล้ว → ไปหน้าโปรไฟล์
-      return res.redirect("/home");
+      return res.redirect("/profile");
     }
     // ถ้ายังไม่มีข้อมูล → แสดงหน้าเพิ่มข้อมูล
     return res.render("accounts", { userData: null });

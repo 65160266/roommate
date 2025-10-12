@@ -4,11 +4,13 @@
         <h1 class="text-lg font-bold">ROOM MATE</h1>
     </div>
     <div class="space-x-4">
-        <a href="/home" class="text-gray-700">หน้าแรก</a>
-        <a href="/post" class="text-gray-700">โพสต์</a>
-        <a href="#" class="text-gray-700">แชท</a>
-        <a href="#" class="text-gray-700">จับคู่สำเร็จ</a>
-        <a href="#" class="text-gray-700">กำลังดำเนินการ</a>
+        <a href="/home" class="text-gray-700 hover:text-blue-500">หน้าแรก</a>
+        <a href="/post" class="text-gray-700 hover:text-blue-500">โพสต์</a>
+        <a href="/chat" class="text-gray-700 hover:text-blue-500">แชท</a>
+        <a href="/group-chat" class="text-gray-700 hover:text-blue-500">กลุ่มแชท</a>
+        <a href="/home" onclick="showTab('find')" class="text-gray-700 hover:text-blue-500">จับคู่</a>
+        <a href="/home" onclick="showTab('matched')" class="text-gray-700 hover:text-blue-500">จับคู่สำเร็จ</a>
+        <a href="/home" onclick="showTab('in-progress')" class="text-gray-700 hover:text-blue-500">กำลังดำเนินการ</a>
         <!-- <a href="/post-room" class="text-gray-700">Room</a> -->
     </div>
     <div class="flex items-center space-x-4">
