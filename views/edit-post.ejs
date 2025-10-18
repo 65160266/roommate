@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/header.css">
+    <link rel="stylesheet" href="/css/edit-post.css">
+    <title>แก้ไขประกาศ - RoomMate</title>
+</head>
+<body class="home-container">
+    <%- include('partials/homeheader') %>
+
+    <!-- Flash Messages -->
+    <% if (typeof session !== 'undefined' && session.flash) { %>
+        <% if (session.flash.success) { %>
+            <div class="flash-message success">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <%= session.flash.success %>
+            </div>
+        <% } %>
+        <% if (session.flash.error) { %>
+            <div class="flash-message error">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <%= session.flash.error %>
+            </div>
+        <% } %>
+    <% } %>
+
+    <div class="edit-post-container">
+        <div class="edit-post-card">
+            <div class="edit-post-header">
+                <h1 class="edit-post-title">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                    แก้ไขประกาศ
+                </h1>
+                <a href="/post" class="edit-post-close">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </a>
+            </div>
+
+            <form action="/post/edit/<%= post.Post_id %>" method="POST">
+                <!-- Room Status Section -->
+                <div class="form-section">
+                    <h3 class="form-section-title">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                        </svg>
+                        สถานะห้อง
+                    </h3>
+                    <div class="radio-group">
+                        <label class="radio-item">
+                            <input type="radio" name="room_status" value="needs_room" <%= post.room_status === 'needs_room' ? 'checked' : '' %>>
+                            <span>กำลังหาห้อง</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="room_status" value="has_room" <%= post.room_status === 'has_room' ? 'checked' : '' %>>
+                            <span>มีห้องแล้ว (ต้องการคนเพิ่ม)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Room Details Section (only show if has room) - Horizontal Layout -->
+                <div id="room-details-section" class="form-section <%= post.room_status === 'has_room' ? '' : 'hidden' %>">
+                    <h3 class="form-section-title">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                        รายละเอียดห้อง
+                    </h3>
+                    <div class="form-horizontal">
+                        <div class="form-group">
+                            <label for="people_needed" class="form-label">
+                                ต้องการคนเพิ่มกี่คน
+                            </label>
+                            <input type="number" 
+                                   id="people_needed" 
+                                   name="people_needed" 
+                                   min="1" 
+                                   max="10" 
+                                   value="<%= post.people_needed || 1 %>"
+                                   class="form-input"
+                                   placeholder="เช่น 2">
+                        </div>
+                        <div class="form-group">
+                            <label for="room_description" class="form-label">
+                                อธิบายเกี่ยวกับห้อง
+                            </label>
+                            <textarea id="room_description" 
+                                      name="room_description" 
+                                      rows="3" 
+                                      class="form-textarea auto-resize"
+                                      placeholder="อธิบายเกี่ยวกับห้อง เช่น ตำแหน่ง ราคา สิ่งอำนวยความสะดวก"><%= post.room_description || '' %></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Post Content Section -->
+                <div class="form-section">
+                    <h3 class="form-section-title">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        เนื้อหาประกาศ
+                    </h3>
+                    <div class="form-group">
+                        <label for="content" class="form-label">
+                            เขียนเนื้อหาประกาศของคุณ
+                        </label>
+                        <textarea id="content" 
+                                  name="content" 
+                                  rows="6" 
+                                  class="form-textarea auto-resize"
+                                  placeholder="เขียนเนื้อหาประกาศของคุณที่นี่..." required><%= post.content || '' %></textarea>
+                        <p class="text-sm text-gray-500 mt-2">
+                            เขียนรายละเอียดเกี่ยวกับการหาห้องหรือการแชร์ห้องของคุณ
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <a href="/post" class="btn-cancel">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        ยกเลิก
+                    </a>
+                    <button type="submit" class="btn-save">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        บันทึกการแก้ไข
+                    </button>
+                </div>
+            </form>
+
+            <!-- Post Info Section -->
+            <div class="post-info-section">
+                <h3 class="post-info-title">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    ข้อมูลประกาศ
+                </h3>
+                <div class="post-info-item">
+                    <span class="post-info-label">สร้างเมื่อ:</span>
+                    <span class="post-info-value"><%= new Date(post.created_at).toLocaleString('th-TH') %></span>
+                </div>
+                <% if (post.updated_at && post.updated_at !== post.created_at) { %>
+                    <div class="post-info-item">
+                        <span class="post-info-label">แก้ไขล่าสุด:</span>
+                        <span class="post-info-value"><%= new Date(post.updated_at).toLocaleString('th-TH') %></span>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-resize textarea
+        const textarea = document.getElementById('content');
+        const roomDescription = document.getElementById('room_description');
+        
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+        });
+        
+        if (roomDescription) {
+            roomDescription.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+            });
+        }
+
+        // Room status change handler
+        const roomStatusRadios = document.querySelectorAll('input[name="room_status"]');
+        const roomDetailsSection = document.getElementById('room-details-section');
+
+        roomStatusRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'has_room') {
+                    roomDetailsSection.classList.remove('hidden');
+                } else {
+                    roomDetailsSection.classList.add('hidden');
+                }
+            });
+        });
+
+        // Form validation
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            const content = document.getElementById('content').value.trim();
+            if (content.length < 10) {
+                e.preventDefault();
+                alert('กรุณาเขียนเนื้อหาประกาศอย่างน้อย 10 ตัวอักษร');
+                return false;
+            }
+
+            // Validate room status fields
+            const selectedRoomStatus = document.querySelector('input[name="room_status"]:checked').value;
+            if (selectedRoomStatus === 'has_room') {
+                const peopleNeeded = document.getElementById('people_needed').value;
+                if (!peopleNeeded || peopleNeeded < 1) {
+                    e.preventDefault();
+                    alert('กรุณาระบุจำนวนคนที่ต้องการเพิ่ม');
+                    return false;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

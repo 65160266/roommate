@@ -12,9 +12,10 @@ const authRoutes = require("./routes/authRoutes");
 const accountRoutes = require("./routes/accountRoutes");
 const postRoutes = require("./routes/postRoutes"); 
 const homeRoutes = require("./routes/homeRoutes");
-const matchRoutes = require("./routes/matchRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const groupChatRoutes = require("./routes/groupChatRoutes");
+const matchRoutes = require("./routes/matchRoutes");
+const flashMiddleware = require("./middleware/flashMiddleware");
 
 
 // Middleware พื้นฐาน
@@ -34,6 +35,9 @@ app.use(session({
 }));
 app.use(flash());
 
+// Flash Message Middleware (ล้าง flash หลังแสดง)
+app.use(flashMiddleware);
+
 // Global variables สำหรับ ejs
 app.use((req, res, next) => {
   res.locals.session = req.session;
@@ -46,9 +50,9 @@ app.use("/", authRoutes);
 app.use("/", accountRoutes);
 app.use("/", postRoutes);
 app.use("/", homeRoutes);
-app.use("/match", matchRoutes);
 app.use("/chat", chatRoutes);
 app.use("/group-chat", groupChatRoutes);
+app.use("/match", matchRoutes);
 
 // app.use("/room", roomRoutes);
 
@@ -72,6 +76,22 @@ io.on('connection', (socket) => {
   socket.on('new-message', (data) => {
     // Broadcast message to all users in the chat room
     socket.to(`chat-${data.chatId}`).emit('message-received', data);
+  });
+
+  // Handle group chat
+  socket.on('join-group-chat', (groupId) => {
+    socket.join(`group-${groupId}`);
+    console.log(`User ${socket.id} joined group ${groupId}`);
+  });
+
+  socket.on('leave-group-chat', (groupId) => {
+    socket.leave(`group-${groupId}`);
+    console.log(`User ${socket.id} left group ${groupId}`);
+  });
+
+  // Handle new group message
+  socket.on('new-group-message', (data) => {
+    socket.to(`group-${data.group_id}`).emit('new-group-message', data);
   });
 
   // Handle typing indicator

@@ -69,6 +69,31 @@ const Account = {
         Majors_id,
       ]);
       return result;
+  },
+
+  // Get all users
+  getAllUsers: async () => {
+    try {
+      const [rows] = await pool.execute(`
+        SELECT 
+          a.Accounts_id,
+          a.first_name,
+          a.last_name,
+          a.image,
+          a.age,
+          a.Faculty_id,
+          a.Majors_id,
+          f.faculty_name,
+          m.majors_name
+        FROM Accounts a
+        LEFT JOIN Faculty f ON a.Faculty_id = f.faculty_id
+        LEFT JOIN Majors m ON a.Majors_id = m.majors_id
+        ORDER BY a.first_name, a.last_name
+      `);
+      return rows;
+    } catch (error) {
+      throw error;
+    }
   }
 
 };

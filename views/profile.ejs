@@ -5,84 +5,100 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/header.css">
-    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="/css/header.css">
+    <link rel="stylesheet" href="/css/profile.css">
     <title>โปรไฟล์ผู้ใช้</title>
 </head>
 
-<body class="bg-gray-100 min-h-screen flex flex-col">
+<body class="home-container">
 
     <%- include('partials/homeheader') %>
 
         <!-- Main content -->
-        <main class="flex-grow flex items-center justify-center p-4">
-            <div class="bg-white shadow-lg rounded-2xl p-8 max-w-sm w-full text-center">
-                <!-- กรอบรูปภาพ -->
-                <div class="flex justify-center mb-4">
+        <main class="profile-container">
+            <div class="profile-card">
+                <!-- Profile Image -->
+                <div class="profile-image-container">
                     <% if (userData.image) { %>
-                        <img src="<%= userData.image %>" alt="Profile"
-                            class="w-32 h-32 rounded-full object-cover border-4 border-blue-500">
-                        <% } else { %>
-                            <div
-                                class="w-32 h-32 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm border-4 border-gray-400">
-                                ยังไม่มีรูปโปรไฟล์
-                            </div>
-                            <% } %>
+                        <img src="<%= userData.image %>" alt="Profile" class="profile-image">
+                    <% } else { %>
+                        <div class="profile-image-placeholder">
+                            <%= userData.first_name ? userData.first_name.charAt(0) : 'U' %>
+                        </div>
+                    <% } %>
                 </div>
 
-                <!-- ชื่อ -->
-                <h2 class="text-xl font-bold text-gray-800">
-                    <%= userData.first_name %>
-                        <%= userData.last_name %>
-                </h2>
+                <!-- Profile Info -->
+                <div class="profile-info">
+                    <h2 class="profile-name">
+                        <%= userData.first_name %> <%= userData.last_name %>
+                    </h2>
+                    
+                    <p class="profile-nickname">
+                        <%= userData.nickname || 'ไม่มีชื่อเล่น' %>
+                    </p>
 
-                <!-- ชื่อเล่น -->
-                <p class="text-gray-600 mt-1">
-                    ชื่อเล่น: <%= userData.nickname %>
-                </p>
+                    <!-- Profile Details -->
+                    <div class="profile-details">
+                        <div class="profile-detail-item">
+                            <span class="profile-detail-label">รหัสนักศึกษา</span>
+                            <span class="profile-detail-value"><%= userData.student_id || 'ไม่ระบุ' %></span>
+                        </div>
+                        
+                        <div class="profile-detail-item">
+                            <span class="profile-detail-label">อายุ</span>
+                            <span class="profile-detail-value"><%= userData.age || 'ไม่ระบุ' %> ปี</span>
+                        </div>
+                        
+                        <div class="profile-detail-item">
+                            <span class="profile-detail-label">เพศ</span>
+                            <span class="profile-detail-value"><%= userData.gender || 'ไม่ระบุ' %></span>
+                        </div>
+                        
+                        <div class="profile-detail-item">
+                            <span class="profile-detail-label">เบอร์โทร</span>
+                            <span class="profile-detail-value"><%= userData.phone || 'ไม่ระบุ' %></span>
+                        </div>
+                        
+                        <div class="profile-detail-item">
+                            <span class="profile-detail-label">สถานะ</span>
+                            <span class="profile-detail-value"><%= userData.status || 'ไม่ระบุ' %></span>
+                        </div>
+                        
+                        <div class="profile-detail-item">
+                            <span class="profile-detail-label">คณะ</span>
+                            <span class="profile-detail-value"><%= userData.faculty_name || 'ไม่ระบุ' %></span>
+                        </div>
+                        
+                        <div class="profile-detail-item">
+                            <span class="profile-detail-label">สาขา</span>
+                            <span class="profile-detail-value"><%= userData.majors_name || 'ไม่ระบุ' %></span>
+                        </div>
+                    </div>
 
-                <!-- รหัสนักศึกษา -->
-                <p class="text-gray-500 mt-2 text-sm">
-                    รหัสนักศึกษา: <%= userData.student_id %>
-                </p>
+                    <!-- Personality -->
+                    <% if (userData.Personalitiy) { %>
+                        <div class="profile-personality">
+                            <strong>ลักษณะนิสัย:</strong><br>
+                            <%= userData.Personalitiy %>
+                        </div>
+                    <% } %>
 
-                <p class="text-gray-500 mt-2 text-sm">
-                    อายุ: <%= userData.age %>
-                </p>
-
-                <p class="text-gray-500 mt-2 text-sm">
-                    เพศ: <%= userData.gender %>
-                </p>
-
-                <p class="text-gray-500 mt-2 text-sm">
-                    เบอร์โทร: <%= userData.phone %>
-                </p>
-
-                <p class="text-gray-500 mt-2 text-sm">
-                    สถานะ: <%= userData.status %>
-                </p>
-
-                <p class="text-gray-600 mt-2">
-                    ลักษณะนิสัย: <%= userData.Personalitiy || 'ไม่พบข้อ' %>
-                </p>
-
-                <!-- คณะ -->
-                <p class="text-gray-600 mt-2">
-                    คณะ: <%= userData.faculty_name || 'ไม่พบข้อมูลคณะ' %>
-                </p>
-
-                <!-- สาขา -->
-                <p class="text-gray-600">
-                    สาขา: <%= userData.majors_name || 'ไม่พบข้อมูลสาขา' %>
-                </p>
-
-
-
-                <!-- ปุ่มแก้ไข -->
-                <div class="mt-6">
-                    <a href="/edit-profile" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md shadow inline-block text-center">
-    แก้ไขข้อมูล
-</a>
+                    <!-- Action Buttons -->
+                    <div class="profile-actions">
+                        <a href="/edit-profile" class="btn-edit">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            แก้ไขข้อมูล
+                        </a>
+                        <a href="/home" class="btn-back">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                            กลับหน้าหลัก
+                        </a>
+                    </div>
                 </div>
             </div>
         </main>

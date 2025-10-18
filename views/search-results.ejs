@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/header.css">
+    <link rel="stylesheet" href="/css/home.css">
+    <link rel="stylesheet" href="/css/matching-posts.css">
+    <title>RoomMate - ผลการค้นหา</title>
+</head>
+<body class="home-container">
+    <%- include('partials/homeheader') %>
+
+    <!-- Flash Messages -->
+    <% if (typeof session !== 'undefined' && session.flash) { %>
+        <% if (session.flash.success) { %>
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 mx-4">
+                <%= session.flash.success %>
+            </div>
+        <% } %>
+        <% if (session.flash.error) { %>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 mx-4">
+                <%= session.flash.error %>
+            </div>
+        <% } %>
+    <% } %>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-6">
+        <!-- Header Section -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
+            <!-- Left Side - Back Button -->
+            <div class="flex items-center mb-6 lg:mb-0">
+                <a href="/home" class="flex items-center text-blue-600 hover:text-blue-800 transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    กลับไปหน้าแรก
+                </a>
+            </div>
+
+            <!-- Right Side - Search Info -->
+            <div class="text-right">
+                <h1 class="text-2xl font-bold text-gray-800 mb-2">ผลการค้นหา</h1>
+                <p class="text-gray-600">
+                    ค้นหา: "<span class="font-semibold text-blue-600"><%= searchQuery %></span>" 
+                    - พบ <span class="font-semibold text-green-600"><%= accounts.length %></span> รายการ
+                </p>
+            </div>
+        </div>
+
+        <!-- Search Section -->
+        <div class="search-section mb-8">
+            <div class="search-container">
+                <form action="/search" method="get" class="search-form">
+                    <div class="search-input-group">
+                        <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <input type="text" name="q" id="search-input" placeholder="ค้นหาเพื่อนร่วมห้อง..." class="search-input" value="<%= searchQuery %>">
+                        <button type="submit" class="search-button" id="search-btn">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            ค้นหา
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Search Results -->
+        <div class="search-results">
+            <% if (accounts.length > 0) { %>
+                <!-- Users Grid -->
+                <div class="users-grid">
+                    <% accounts.forEach((user, index) => { %>
+                        <div class="user-card" data-user-id="<%= user.Accounts_id %>">
+                            <!-- User Profile Header -->
+                            <div class="user-profile-header">
+                                <div class="user-avatar">
+                                    <% if (user.image) { %>
+                                        <img src="<%= user.image %>" alt="<%= user.first_name %>" class="avatar-image">
+                                    <% } else { %>
+                                        <div class="avatar-placeholder">
+                                            <svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
+                                    <% } %>
+                                </div>
+                                <div class="user-info">
+                                    <h3 class="user-name"><%= user.first_name %> <%= user.last_name %></h3>
+                                    <p class="user-nickname">@<%= user.nickname %></p>
+                                    <div class="user-details">
+                                        <span class="detail-item">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            </svg>
+                                            <%= user.faculty_name %>
+                                        </span>
+                                        <span class="detail-item">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                            </svg>
+                                            <%= user.majors_name %>
+                                        </span>
+                                        <span class="detail-item">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                            </svg>
+                                            ปี <%= user.year %>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Post Information -->
+                            <div class="post-info">
+                                <h4 class="post-title"><%= user.post_title %></h4>
+                                
+                                <!-- Room Status Header -->
+                                <% if (user.room_status === 'has_room') { %>
+                                    <div class="room-status-header">
+                                        <div class="room-status-left">
+                                            <svg class="room-status-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                            </svg>
+                                            <span>มีห้องแล้ว</span>
+                                        </div>
+                                        <div class="room-status-right">
+                                            ต้องการ <%= user.people_needed %> คน
+                                        </div>
+                                    </div>
+                                <% } else if (user.room_status === 'looking_for_room') { %>
+                                    <div class="looking-for-room-header">
+                                        <div class="room-status-left">
+                                            <svg class="room-status-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                            </svg>
+                                            <span>กำลังมองหาห้อง</span>
+                                        </div>
+                                    </div>
+                                <% } %>
+
+                                <!-- Post Content -->
+                                <div class="post-content">
+                                    <p><%= user.post_content %></p>
+                                </div>
+
+                                <!-- Personality Tags -->
+                                <% if (user.Personality) { %>
+                                    <div class="personality-tags">
+                                        <% user.Personality.split(', ').forEach(personality => { %>
+                                            <span class="personality-tag"><%= personality.trim() %></span>
+                                        <% }); %>
+                                    </div>
+                                <% } %>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="action-buttons">
+                                <button onclick="passUser(<%= user.Accounts_id %>)" class="action-btn pass-btn">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    ข้าม
+                                </button>
+                                <button onclick="matchUser(<%= user.Accounts_id %>)" class="action-btn match-btn">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                    </svg>
+                                    จับคู่
+                                </button>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } else { %>
+                <!-- Empty State -->
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="empty-title">ไม่พบผลการค้นหา</h3>
+                    <p class="empty-text">ไม่พบผู้ใช้ที่ตรงกับคำค้นหา "<%= searchQuery %>"</p>
+                    <div class="empty-actions">
+                        <a href="/home" class="btn-primary">กลับไปหน้าแรก</a>
+                        <button onclick="document.getElementById('search-input').focus()" class="btn-secondary">ลองค้นหาใหม่</button>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <script>
+        // Search functionality
+        document.getElementById('search-input').addEventListener('input', function() {
+            const searchBtn = document.getElementById('search-btn');
+            if (this.value.trim() !== '') {
+                searchBtn.disabled = false;
+                searchBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                searchBtn.disabled = true;
+                searchBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        });
+
+        // Match/Pass functions
+        function matchUser(userId) {
+            if (confirm('คุณต้องการจับคู่กับผู้ใช้นี้หรือไม่?')) {
+                fetch('/match', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ target_id: userId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('ส่งคำขอจับคู่เรียบร้อยแล้ว!');
+                        // Remove the user card
+                        const userCard = document.querySelector(`[data-user-id="${userId}"]`);
+                        if (userCard) {
+                            userCard.remove();
+                        }
+                    } else {
+                        alert('เกิดข้อผิดพลาด: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('เกิดข้อผิดพลาดในการส่งคำขอจับคู่');
+                });
+            }
+        }
+
+        function passUser(userId) {
+            if (confirm('คุณต้องการข้ามผู้ใช้นี้หรือไม่?')) {
+                fetch('/pass', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ target_id: userId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove the user card
+                        const userCard = document.querySelector(`[data-user-id="${userId}"]`);
+                        if (userCard) {
+                            userCard.remove();
+                        }
+                    } else {
+                        alert('เกิดข้อผิดพลาด: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('เกิดข้อผิดพลาดในการข้ามผู้ใช้');
+                });
+            }
+        }
+    </script>
+</body>
+</html>

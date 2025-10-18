@@ -1,0 +1,343 @@
+/* Group Chat List Page Styles */
+
+.group-chat-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    background: #f8fafc;
+    min-height: calc(100vh - 80px);
+}
+
+.group-chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.group-chat-header-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.group-chat-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: #f1f5f9;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.group-chat-back:hover {
+    background: #e2e8f0;
+    color: #475569;
+    text-decoration: none;
+}
+
+.group-chat-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.create-group-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.create-group-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.group-chat-content {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.group-chat-list {
+    padding: 0;
+}
+
+.group-chat-item {
+    display: flex;
+    align-items: center;
+    padding: 2rem;
+    text-decoration: none;
+    color: inherit;
+    border-bottom: 1px solid #f1f5f9;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.group-chat-item:hover {
+    background: #f8fafc;
+    transform: translateX(4px);
+    text-decoration: none;
+    color: inherit;
+}
+
+.group-chat-item:last-child {
+    border-bottom: none;
+}
+
+.group-chat-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1.5rem;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.group-icon {
+    width: 28px;
+    height: 28px;
+    color: white;
+}
+
+.group-chat-item:hover .group-chat-avatar {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.group-chat-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.group-chat-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.group-chat-description {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin-bottom: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.group-chat-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.group-chat-members {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    background: #f1f5f9;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.group-chat-role {
+    font-size: 0.75rem;
+    color: #3b82f6;
+    background: #dbeafe;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.group-chat-last-message {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.group-chat-time {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.group-chat-unread-badge {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    min-width: 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.group-chat-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #64748b;
+}
+
+.group-chat-empty-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 2rem;
+    opacity: 0.5;
+    color: #94a3b8;
+}
+
+.group-chat-empty-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 0.75rem;
+}
+
+.group-chat-empty-text {
+    font-size: 1rem;
+    color: #94a3b8;
+    margin-bottom: 2rem;
+}
+
+.group-chat-empty-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.group-chat-empty-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .group-chat-container {
+        padding: 1rem 0.5rem;
+    }
+    
+    .group-chat-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .group-chat-header-info {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .group-chat-item {
+        padding: 1.5rem 1rem;
+    }
+    
+    .group-chat-avatar {
+        width: 50px;
+        height: 50px;
+        margin-right: 1rem;
+    }
+    
+    .group-icon {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .group-chat-name {
+        font-size: 1.125rem;
+    }
+    
+    .group-chat-description {
+        font-size: 0.75rem;
+    }
+    
+    .group-chat-last-message {
+        font-size: 0.75rem;
+    }
+    
+    .group-chat-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .group-chat-title {
+        font-size: 1.5rem;
+    }
+    
+    .group-chat-item {
+        padding: 1rem 0.75rem;
+    }
+    
+    .group-chat-avatar {
+        width: 45px;
+        height: 45px;
+        margin-right: 0.75rem;
+    }
+    
+    .group-icon {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .group-chat-name {
+        font-size: 1rem;
+    }
+    
+    .group-chat-description {
+        font-size: 0.625rem;
+    }
+    
+    .group-chat-last-message {
+        font-size: 0.625rem;
+    }
+}

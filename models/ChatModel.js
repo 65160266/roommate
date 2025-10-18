@@ -1,160 +1,150 @@
 const pool = require("../config/database");
 
 const Chat = {
-  // Get or create chat room between two matched users
+  // Get or create chat room between two users
   getOrCreateChatRoom: async (user1_id, user2_id) => {
     try {
-      // Ensure parameters are integers
-      const userId1 = parseInt(user1_id);
-      const userId2 = parseInt(user2_id);
+      console.log('Getting or creating chat room for users:', user1_id, user2_id);
       
-      // Ensure user1_id < user2_id for consistency
-      const smaller_id = Math.min(userId1, userId2);
-      const larger_id = Math.max(userId1, userId2);
-
       // Check if chat room already exists
-      const [existingRoom] = await pool.execute(
-        `SELECT chat_id FROM ChatRooms 
-         WHERE user1_id = ? AND user2_id = ?`,
-        [smaller_id, larger_id]
+      const [existingRooms] = await pool.execute(
+        `SELECT chat_id FROM Chat_Rooms 
+         WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)`,
+        [user1_id, user2_id, user2_id, user1_id]
       );
 
-      if (existingRoom.length > 0) {
-        return existingRoom[0].chat_id;
+      console.log('Existing chat rooms:', existingRooms);
+
+      if (existingRooms.length > 0) {
+        console.log('Found existing chat room:', existingRooms[0].chat_id);
+        return existingRooms[0].chat_id;
       }
 
       // Create new chat room
+      console.log('Creating new chat room...');
       const [result] = await pool.execute(
-        `INSERT INTO ChatRooms (user1_id, user2_id) VALUES (?, ?)`,
-        [smaller_id, larger_id]
+        `INSERT INTO Chat_Rooms (user1_id, user2_id, created_at) 
+         VALUES (?, ?, NOW())`,
+        [user1_id, user2_id]
       );
 
+      console.log('Created new chat room with ID:', result.insertId);
       return result.insertId;
+    } catch (error) {
+      console.error('Error in getOrCreateChatRoom:', error);
+      throw error;
+    }
+  },
+
+  // Get user's chat rooms with matched users
+  getUserChatRooms: async (user_id) => {
+    try {
+      const [rows] = await pool.execute(
+        `SELECT 
+          cr.chat_id,
+          cr.created_at,
+          CASE 
+            WHEN cr.user1_id = ? THEN cr.user2_id
+            ELSE cr.user1_id
+          END as other_user_id,
+          CONCAT(COALESCE(a.first_name, ''), ' ', COALESCE(a.last_name, '')) as other_user_name,
+          a.nickname as other_user_nickname,
+          a.image as other_user_image,
+          -- Get last message
+          (SELECT message_text FROM Messages 
+           WHERE chat_id = cr.chat_id 
+           ORDER BY created_at DESC LIMIT 1) as last_message,
+          (SELECT created_at FROM Messages 
+           WHERE chat_id = cr.chat_id 
+           ORDER BY created_at DESC LIMIT 1) as last_message_time,
+          -- Get unread count
+          (SELECT COUNT(*) FROM Messages 
+           WHERE chat_id = cr.chat_id 
+           AND sender_id != ? 
+           AND is_read = FALSE) as unread_count
+        FROM Chat_Rooms cr
+        LEFT JOIN Accounts a ON (
+          CASE 
+            WHEN cr.user1_id = ? THEN cr.user2_id
+            ELSE cr.user1_id
+          END = a.Accounts_id
+        )
+        WHERE (cr.user1_id = ? OR cr.user2_id = ?)
+        ORDER BY last_message_time DESC`,
+        [user_id, user_id, user_id, user_id, user_id]
+      );
+
+      return rows;
     } catch (error) {
       throw error;
     }
   },
 
-  // Get all chat rooms for a user (only with matched users)
-  getUserChatRooms: async (user_id) => {
-    const userId = parseInt(user_id);
-    
-    const [rows] = await pool.execute(
-      `SELECT 
-        cr.chat_id,
-        cr.created_at,
-        cr.updated_at,
-        CASE 
-          WHEN cr.user1_id = ? THEN a2.Accounts_id
-          ELSE a1.Accounts_id
-        END as other_user_id,
-        CASE 
-          WHEN cr.user1_id = ? THEN CONCAT(COALESCE(a2.first_name, ''), ' ', COALESCE(a2.last_name, ''))
-          ELSE CONCAT(COALESCE(a1.first_name, ''), ' ', COALESCE(a1.last_name, ''))
-        END as other_user_name,
-        CASE 
-          WHEN cr.user1_id = ? THEN a2.image
-          ELSE a1.image
-        END as other_user_image,
-        CASE 
-          WHEN cr.user1_id = ? THEN a2.nickname
-          ELSE a1.nickname
-        END as other_user_nickname,
-        -- Get last message
-        (SELECT message_text FROM Messages 
-         WHERE chat_id = cr.chat_id 
-         ORDER BY created_at DESC LIMIT 1) as last_message,
-        (SELECT created_at FROM Messages 
-         WHERE chat_id = cr.chat_id 
-         ORDER BY created_at DESC LIMIT 1) as last_message_time,
-        -- Get unread count
-        (SELECT COUNT(*) FROM Messages 
-         WHERE chat_id = cr.chat_id 
-         AND sender_id != ? 
-         AND is_read = FALSE) as unread_count
-      FROM ChatRooms cr
-      LEFT JOIN Accounts a1 ON cr.user1_id = a1.Accounts_id
-      LEFT JOIN Accounts a2 ON cr.user2_id = a2.Accounts_id
-      WHERE cr.user1_id = ? OR cr.user2_id = ?
-      ORDER BY cr.updated_at DESC`,
-      [userId, userId, userId, userId, userId, userId, userId]
-    );
-    return rows;
+  // Get chat room info
+  getChatRoomInfo: async (chat_id, user_id) => {
+    try {
+      const [rows] = await pool.execute(
+        `SELECT 
+          cr.chat_id,
+          cr.created_at,
+          CASE 
+            WHEN cr.user1_id = ? THEN cr.user2_id
+            ELSE cr.user1_id
+          END as other_user_id,
+          CONCAT(COALESCE(a.first_name, ''), ' ', COALESCE(a.last_name, '')) as other_user_name,
+          a.nickname as other_user_nickname,
+          a.image as other_user_image
+        FROM Chat_Rooms cr
+        LEFT JOIN Accounts a ON (
+          CASE 
+            WHEN cr.user1_id = ? THEN cr.user2_id
+            ELSE cr.user1_id
+          END = a.Accounts_id
+        )
+        WHERE cr.chat_id = ? AND (cr.user1_id = ? OR cr.user2_id = ?)`,
+        [user_id, user_id, chat_id, user_id, user_id]
+      );
+
+      return rows.length > 0 ? rows[0] : null;
+    } catch (error) {
+      throw error;
+    }
   },
 
-  // Get messages for a specific chat room
+  // Get chat messages
   getChatMessages: async (chat_id, user_id, limit = 50, offset = 0) => {
     try {
-      // Ensure parameters are integers
-      const chatId = parseInt(chat_id);
-      const userId = parseInt(user_id);
       const limitNum = parseInt(limit) || 50;
       const offsetNum = parseInt(offset) || 0;
       
-      // First verify user has access to this chat room
-      const [accessCheck] = await pool.execute(
-        `SELECT chat_id FROM ChatRooms 
-         WHERE chat_id = ? AND (user1_id = ? OR user2_id = ?)`,
-        [chatId, userId, userId]
-      );
-
-      if (accessCheck.length === 0) {
-        throw new Error('Access denied to chat room');
-      }
-
       const [rows] = await pool.query(
         `SELECT 
           m.message_id,
           m.sender_id,
           m.message_text,
-          m.message_type,
-          m.is_read,
           m.created_at,
-          CONCAT(COALESCE(a.first_name, ''), ' ', COALESCE(a.last_name, '')) as sender_name,
-          a.image as sender_image
+          CONCAT(COALESCE(a.first_name, ''), ' ', COALESCE(a.last_name, '')) as sender_name
         FROM Messages m
         LEFT JOIN Accounts a ON m.sender_id = a.Accounts_id
         WHERE m.chat_id = ?
-        ORDER BY m.created_at DESC
+        ORDER BY m.created_at ASC
         LIMIT ${limitNum} OFFSET ${offsetNum}`,
-        [chatId]
+        [chat_id]
       );
 
-      return rows.reverse(); // Return in chronological order
+      return rows;
     } catch (error) {
-      console.error('Error in getChatMessages:', error);
       throw error;
     }
   },
 
-  // Send a message
-  sendMessage: async (chat_id, sender_id, message_text, message_type = 'text') => {
+  // Send message
+  sendMessage: async (chat_id, sender_id, message_text) => {
     try {
-      const chatId = parseInt(chat_id);
-      const senderId = parseInt(sender_id);
-      
-      // Verify user has access to this chat room
-      const [accessCheck] = await pool.execute(
-        `SELECT chat_id FROM ChatRooms 
-         WHERE chat_id = ? AND (user1_id = ? OR user2_id = ?)`,
-        [chatId, senderId, senderId]
-      );
-
-      if (accessCheck.length === 0) {
-        throw new Error('Access denied to chat room');
-      }
-
       const [result] = await pool.execute(
-        `INSERT INTO Messages (chat_id, sender_id, message_text, message_type) 
-         VALUES (?, ?, ?, ?)`,
-        [chatId, senderId, message_text, message_type]
-      );
-
-
-      // Update chat room's updated_at timestamp
-      await pool.execute(
-        `UPDATE ChatRooms SET updated_at = NOW() WHERE chat_id = ?`,
-        [chatId]
+        `INSERT INTO Messages (chat_id, sender_id, message_text, created_at) 
+         VALUES (?, ?, ?, NOW())`,
+        [chat_id, sender_id, message_text]
       );
 
       return result.insertId;
@@ -165,88 +155,54 @@ const Chat = {
 
   // Mark messages as read
   markMessagesAsRead: async (chat_id, user_id) => {
-    const chatId = parseInt(chat_id);
-    const userId = parseInt(user_id);
-    
-    await pool.execute(
-      `UPDATE Messages 
-       SET is_read = TRUE 
-       WHERE chat_id = ? AND sender_id != ? AND is_read = FALSE`,
-      [chatId, userId]
-    );
-  },
-
-  // Get chat room info
-  getChatRoomInfo: async (chat_id, user_id) => {
     try {
-      // Ensure parameters are integers
-      const chatId = parseInt(chat_id);
-      const userId = parseInt(user_id);
-      
-      const [rows] = await pool.execute(
-        `SELECT 
-          cr.chat_id,
-          cr.created_at,
-          CASE 
-            WHEN cr.user1_id = ? THEN a2.Accounts_id
-            ELSE a1.Accounts_id
-          END as other_user_id,
-          CASE 
-            WHEN cr.user1_id = ? THEN CONCAT(COALESCE(a2.first_name, ''), ' ', COALESCE(a2.last_name, ''))
-            ELSE CONCAT(COALESCE(a1.first_name, ''), ' ', COALESCE(a1.last_name, ''))
-          END as other_user_name,
-          CASE 
-            WHEN cr.user1_id = ? THEN a2.image
-            ELSE a1.image
-          END as other_user_image,
-          CASE 
-            WHEN cr.user1_id = ? THEN a2.nickname
-            ELSE a1.nickname
-          END as other_user_nickname
-        FROM ChatRooms cr
-        LEFT JOIN Accounts a1 ON cr.user1_id = a1.Accounts_id
-        LEFT JOIN Accounts a2 ON cr.user2_id = a2.Accounts_id
-        WHERE cr.chat_id = ? AND (cr.user1_id = ? OR cr.user2_id = ?)`,
-        [userId, userId, userId, userId, chatId, userId, userId]
+      await pool.execute(
+        `UPDATE Messages 
+         SET is_read = TRUE 
+         WHERE chat_id = ? AND sender_id != ? AND is_read = FALSE`,
+        [chat_id, user_id]
       );
-
-      return rows.length > 0 ? rows[0] : null;
     } catch (error) {
-      console.error('Error in getChatRoomInfo:', error);
       throw error;
     }
   },
 
-  // Check if two users are matched (can chat)
-  areUsersMatched: async (user1_id, user2_id) => {
-    const userId1 = parseInt(user1_id);
-    const userId2 = parseInt(user2_id);
-    
-    const [rows] = await pool.execute(
-      `SELECT match_id FROM Matches 
-       WHERE ((requester_id = ? AND target_id = ?) OR (requester_id = ? AND target_id = ?))
-       AND status = 'confirmed'`,
-      [userId1, userId2, userId2, userId1]
-    );
+  // Get unread count for user
+  getUnreadCount: async (user_id) => {
+    try {
+      const [rows] = await pool.execute(
+        `SELECT COUNT(*) as unread_count
+        FROM Messages m
+        JOIN Chat_Rooms cr ON m.chat_id = cr.chat_id
+        WHERE (cr.user1_id = ? OR cr.user2_id = ?)
+        AND m.sender_id != ?
+        AND m.is_read = FALSE`,
+        [user_id, user_id, user_id]
+      );
 
-    return rows.length > 0;
+      return rows[0].unread_count;
+    } catch (error) {
+      throw error;
+    }
   },
 
-  // Get unread message count for a user
-  getUnreadCount: async (user_id) => {
-    const userId = parseInt(user_id);
-    
-    const [rows] = await pool.execute(
-      `SELECT COUNT(*) as unread_count
-      FROM Messages m
-      JOIN ChatRooms cr ON m.chat_id = cr.chat_id
-      WHERE (cr.user1_id = ? OR cr.user2_id = ?)
-      AND m.sender_id != ?
-      AND m.is_read = FALSE`,
-      [userId, userId, userId]
-    );
+  // Check if users are matched
+  areUsersMatched: async (user1_id, user2_id) => {
+    try {
+      console.log('Checking if users are matched:', user1_id, user2_id);
+      const [rows] = await pool.execute(
+        `SELECT match_id FROM Matches 
+         WHERE ((requester_id = ? AND target_id = ?) OR (requester_id = ? AND target_id = ?))
+         AND status = 'confirmed'`,
+        [user1_id, user2_id, user2_id, user1_id]
+      );
 
-    return rows[0].unread_count;
+      console.log('Match query result:', rows);
+      return rows.length > 0;
+    } catch (error) {
+      console.error('Error checking if users are matched:', error);
+      throw error;
+    }
   }
 };
 

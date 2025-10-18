@@ -1,48 +1,25 @@
 const express = require('express');
 const router = express.Router();
 const GroupChatController = require('../controllers/GroupChatController');
-const { isAuthenticated } = require('../middleware/authMiddleware');
+const { isAuthenticated, hasAccountData } = require('../middleware/authMiddleware');
 
-// Apply authentication middleware to all group chat routes
+// Apply authentication middleware to all routes
 router.use(isAuthenticated);
+router.use(hasAccountData);
 
-// GET /group-chat - Show list of group chats for the logged-in user
-router.get('/', GroupChatController.showGroupChats);
-
-// GET /group-chat/create - Show create group form
-router.get('/create', (req, res) => {
-  res.render('create-group', {
-    title: 'Create Group Chat',
-    currentUser: req.session.user
-  });
-});
-
-// POST /group-chat/create - Create new group chat
+// Group chat routes
+router.get('/', GroupChatController.showGroupChatList);
+router.get('/create', GroupChatController.showCreateGroupForm);
 router.post('/create', GroupChatController.createGroup);
-
-// GET /group-chat/:group_id - Show specific group chat room
-router.get('/:group_id', GroupChatController.showGroupChat);
-
-// POST /group-chat/:group_id/message - Send group message
-router.post('/:group_id/message', GroupChatController.sendGroupMessage);
-
-// GET /group-chat/:group_id/messages - Get group messages
-router.get('/:group_id/messages', GroupChatController.getGroupMessages);
-
-// POST /group-chat/:group_id/update - Update group details
-router.post('/:group_id/update', GroupChatController.updateGroup);
-
-// POST /group-chat/:group_id/add-member - Add member to group
+router.get('/:group_id', GroupChatController.showGroupChatRoom);
+router.get('/:group_id/edit', GroupChatController.editGroup);
+router.post('/:group_id/edit', GroupChatController.updateGroup);
+router.get('/:group_id/invite-members', GroupChatController.getInviteMembers);
+router.post('/:group_id/add-members', GroupChatController.addMembers);
+router.delete('/:group_id', GroupChatController.deleteGroup);
+router.post('/:group_id/leave', GroupChatController.leaveGroup);
+router.post('/send-message', GroupChatController.sendMessage);
 router.post('/:group_id/add-member', GroupChatController.addMember);
-
-// POST /group-chat/:group_id/remove-member - Remove member from group
 router.post('/:group_id/remove-member', GroupChatController.removeMember);
 
-// GET /group-chat/:group_id/available-users - Get available users to add
-router.get('/:group_id/available-users', GroupChatController.getAvailableUsers);
-
-// GET /group-chat/unread-count - Get unread message count
-router.get('/unread-count', GroupChatController.getUnreadCount);
-
 module.exports = router;
-

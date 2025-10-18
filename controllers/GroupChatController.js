@@ -1,377 +1,572 @@
-const GroupChat = require('../models/GroupChatModel');
-const Account = require('../models/AccountModel');
-const HomeModel = require('../models/HomeModel');
+const GroupChatModel = require('../models/GroupChatModel');
+const MatchModel = require('../models/MatchModel');
 
-const GroupChatController = {
-  // Show list of group chats for the logged-in user
-  showGroupChats: async (req, res) => {
+exports.showGroupChatList = async (req, res) => {
     try {
-      if (!req.session.user) {
-        req.flash('error', 'Please log in to view group chats.');
-        return res.redirect('/login');
-      }
+        const Register_id = req.session.user?.Register_id;
+        if (!Register_id) {
+            return res.redirect('/login');
+        }
 
-      const Register_id = req.session.user.Register_id;
-      const account = await Account.findByRegisterId(Register_id);
+        const account = await require('../models/AccountModel').findByRegisterId(Register_id);
+        if (!account) {
+            return res.redirect('/accounts');
+        }
 
-      if (!account) {
-        req.flash('error', 'Account not found. Please complete your profile first.');
-        return res.redirect('/accounts');
-      }
-
-      const userGroups = await GroupChat.getUserGroups(account.Accounts_id);
-      const unreadCount = await GroupChat.getUnreadCount(account.Accounts_id);
-
-      res.render('group-chat-list', {
-        title: 'Group Chats',
-        userGroups,
-        unreadCount,
-        currentUser: account
-      });
+        const groupChats = await GroupChatModel.getUserGroups(account.Accounts_id);
+        
+        res.render('group-chat-list', {
+            groupChats: groupChats || [],
+            unreadCount: 0
+        });
     } catch (error) {
-      console.error('Error showing group chats:', error);
-      req.flash('error', 'Error loading group chats');
-      res.redirect('/home');
+        console.error('Error loading group chat list:', error);
+        res.status(500).send('Internal server error');
     }
-  },
-
-  // Show specific group chat room
-  showGroupChat: async (req, res) => {
-    try {
-      const { group_id } = req.params;
-      
-      if (!group_id || isNaN(parseInt(group_id))) {
-        req.flash('error', 'Invalid group ID');
-        return res.redirect('/group-chat');
-      }
-      
-      if (!req.session.user) {
-        return res.redirect('/login');
-      }
-
-      const Register_id = req.session.user.Register_id;
-      const account = await Account.findByRegisterId(Register_id);
-      
-      if (!account) {
-        req.flash('error', 'Account not found. Please complete your profile first.');
-        return res.redirect('/accounts');
-      }
-
-      // Get group details and verify access
-      const groupDetails = await GroupChat.getGroupDetails(parseInt(group_id), account.Accounts_id);
-      
-      if (!groupDetails) {
-        req.flash('error', 'Group not found or access denied');
-        return res.redirect('/group-chat');
-      }
-
-      // Get group members
-      const groupMembers = await GroupChat.getGroupMembers(parseInt(group_id), account.Accounts_id);
-
-      // Get messages
-      const messages = await GroupChat.getGroupMessages(parseInt(group_id), account.Accounts_id);
-
-      // Mark messages as read
-      await GroupChat.markGroupMessagesAsRead(parseInt(group_id), account.Accounts_id);
-
-      res.render('group-chat-room', {
-        groupDetails,
-        groupMembers,
-        messages: messages || [],
-        currentUser: account,
-        title: `Group: ${groupDetails.group_name}`
-      });
-    } catch (error) {
-      console.error('Error loading group chat:', error);
-      req.flash('error', 'Error loading group chat. Please try again.');
-      res.redirect('/group-chat');
-    }
-  },
-
-  // Create new group chat
-  createGroup: async (req, res) => {
-    try {
-      const { group_name, description } = req.body;
-      
-      if (!req.session.user) {
-        req.flash('error', 'Please log in to create a group.');
-        return res.redirect('/login');
-      }
-
-      const Register_id = req.session.user.Register_id;
-      const account = await Account.findByRegisterId(Register_id);
-      
-      if (!account) {
-        req.flash('error', 'Account not found. Please complete your profile first.');
-        return res.redirect('/accounts');
-      }
-
-      if (!group_name || group_name.trim() === '') {
-        req.flash('error', 'Group name is required');
-        return res.redirect('/group-chat');
-      }
-
-      const groupId = await GroupChat.createGroup(
-        group_name.trim(),
-        description ? description.trim() : '',
-        account.Accounts_id
-      );
-
-      req.flash('success', 'Group created successfully!');
-      res.redirect(`/group-chat/${groupId}`);
-    } catch (error) {
-      console.error('Error creating group:', error);
-      req.flash('error', 'Error creating group. Please try again.');
-      res.redirect('/group-chat');
-    }
-  },
-
-  // Add member to group
-  addMember: async (req, res) => {
-    try {
-      const { group_id } = req.params;
-      const { user_id } = req.body;
-      
-      if (!req.session.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      const Register_id = req.session.user.Register_id;
-      const account = await Account.findByRegisterId(Register_id);
-      
-      if (!account) {
-        return res.status(404).json({ error: 'Account not found' });
-      }
-
-      if (!group_id || !user_id || isNaN(parseInt(group_id)) || isNaN(parseInt(user_id))) {
-        return res.status(400).json({ error: 'Invalid group or user ID' });
-      }
-
-      const result = await GroupChat.addMember(
-        parseInt(group_id),
-        parseInt(user_id),
-        account.Accounts_id
-      );
-
-      res.json({ success: true, message: result });
-    } catch (error) {
-      console.error('Error adding member:', error);
-      res.status(500).json({ error: error.message || 'Error adding member' });
-    }
-  },
-
-  // Remove member from group
-  removeMember: async (req, res) => {
-    try {
-      const { group_id } = req.params;
-      const { user_id } = req.body;
-      
-      if (!req.session.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      const Register_id = req.session.user.Register_id;
-      const account = await Account.findByRegisterId(Register_id);
-      
-      if (!account) {
-        return res.status(404).json({ error: 'Account not found' });
-      }
-
-      if (!group_id || !user_id || isNaN(parseInt(group_id)) || isNaN(parseInt(user_id))) {
-        return res.status(400).json({ error: 'Invalid group or user ID' });
-      }
-
-      const result = await GroupChat.removeMember(
-        parseInt(group_id),
-        parseInt(user_id),
-        account.Accounts_id
-      );
-
-      res.json({ success: true, message: result });
-    } catch (error) {
-      console.error('Error removing member:', error);
-      res.status(500).json({ error: error.message || 'Error removing member' });
-    }
-  },
-
-  // Send group message (API endpoint)
-  sendGroupMessage: async (req, res) => {
-    try {
-      const { group_id, message_text } = req.body;
-      
-      if (!req.session.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      const Register_id = req.session.user.Register_id;
-      const account = await Account.findByRegisterId(Register_id);
-      
-      if (!account) {
-        return res.status(404).json({ error: 'Account not found' });
-      }
-
-      if (!group_id || isNaN(parseInt(group_id))) {
-        return res.status(400).json({ error: 'Invalid group ID' });
-      }
-
-      if (!message_text || message_text.trim() === '') {
-        return res.status(400).json({ error: 'Message cannot be empty' });
-      }
-
-      const messageId = await GroupChat.sendGroupMessage(
-        parseInt(group_id),
-        account.Accounts_id,
-        message_text.trim()
-      );
-
-      res.json({
-        success: true,
-        message_id: messageId,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Error sending group message:', error);
-      res.status(500).json({
-        error: 'Error sending message',
-        details: error.message
-      });
-    }
-  },
-
-  // Get group messages (API endpoint)
-  getGroupMessages: async (req, res) => {
-    try {
-      const { group_id } = req.params;
-      const { limit = 50, offset = 0 } = req.query;
-      
-      if (!req.session.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      const Register_id = req.session.user.Register_id;
-      const account = await Account.findByRegisterId(Register_id);
-      
-      if (!account) {
-        return res.status(404).json({ error: 'Account not found' });
-      }
-
-      const messages = await GroupChat.getGroupMessages(
-        parseInt(group_id),
-        account.Accounts_id,
-        parseInt(limit),
-        parseInt(offset)
-      );
-
-      res.json(messages);
-    } catch (error) {
-      console.error('Error getting group messages:', error);
-      res.status(500).json({ error: 'Error getting messages' });
-    }
-  },
-
-  // Update group details
-  updateGroup: async (req, res) => {
-    try {
-      const { group_id } = req.params;
-      const { group_name, description } = req.body;
-      
-      if (!req.session.user) {
-        req.flash('error', 'Please log in to update group.');
-        return res.redirect('/login');
-      }
-
-      const Register_id = req.session.user.Register_id;
-      const account = await Account.findByRegisterId(Register_id);
-      
-      if (!account) {
-        req.flash('error', 'Account not found. Please complete your profile first.');
-        return res.redirect('/accounts');
-      }
-
-      if (!group_id || isNaN(parseInt(group_id))) {
-        req.flash('error', 'Invalid group ID');
-        return res.redirect('/group-chat');
-      }
-
-      if (!group_name || group_name.trim() === '') {
-        req.flash('error', 'Group name is required');
-        return res.redirect(`/group-chat/${group_id}`);
-      }
-
-      await GroupChat.updateGroup(
-        parseInt(group_id),
-        group_name.trim(),
-        description ? description.trim() : '',
-        account.Accounts_id
-      );
-
-      req.flash('success', 'Group updated successfully!');
-      res.redirect(`/group-chat/${group_id}`);
-    } catch (error) {
-      console.error('Error updating group:', error);
-      req.flash('error', error.message || 'Error updating group');
-      res.redirect(`/group-chat/${group_id}`);
-    }
-  },
-
-  // Get available users to add to group
-  getAvailableUsers: async (req, res) => {
-    try {
-      const { group_id } = req.params;
-      
-      if (!req.session.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      const Register_id = req.session.user.Register_id;
-      const account = await Account.findByRegisterId(Register_id);
-      
-      if (!account) {
-        return res.status(404).json({ error: 'Account not found' });
-      }
-
-      // Get all users
-      const allUsers = await HomeModel.getAllUsers();
-      
-      // Get current group members
-      const groupMembers = await GroupChat.getGroupMembers(parseInt(group_id), account.Accounts_id);
-      const memberIds = groupMembers.map(member => member.user_id);
-      
-      // Filter out current members
-      const availableUsers = allUsers.filter(user => 
-        user.Accounts_id !== account.Accounts_id && 
-        !memberIds.includes(user.Accounts_id)
-      );
-
-      res.json(availableUsers);
-    } catch (error) {
-      console.error('Error getting available users:', error);
-      res.status(500).json({ error: 'Error getting available users' });
-    }
-  },
-
-  // Get unread count (API endpoint)
-  getUnreadCount: async (req, res) => {
-    try {
-      if (!req.session.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      const Register_id = req.session.user.Register_id;
-      const account = await Account.findByRegisterId(Register_id);
-      
-      if (!account) {
-        return res.status(404).json({ error: 'Account not found' });
-      }
-
-      const unreadCount = await GroupChat.getUnreadCount(account.Accounts_id);
-      res.json({ unread_count: unreadCount });
-    } catch (error) {
-      console.error('Error getting unread count:', error);
-      res.status(500).json({ error: 'Error getting unread count' });
-    }
-  }
 };
 
-module.exports = GroupChatController;
+exports.showCreateGroupForm = async (req, res) => {
+    try {
+        const Register_id = req.session.user?.Register_id;
+        if (!Register_id) {
+            return res.redirect('/login');
+        }
 
+        const account = await require('../models/AccountModel').findByRegisterId(Register_id);
+        if (!account) {
+            return res.redirect('/accounts');
+        }
+
+        // Get matched users for inviting
+        let matchedUsers = [];
+        try {
+            matchedUsers = await MatchModel.getConfirmedMatches(account.Accounts_id);
+            console.log('Matched users for group creation:', matchedUsers);
+        } catch (error) {
+            console.error('Error getting matched users:', error);
+            matchedUsers = [];
+        }
+        
+        res.render('create-group', {
+            matchedUsers: matchedUsers || []
+        });
+    } catch (error) {
+        console.error('Error loading create group form:', error);
+        res.status(500).send('Internal server error');
+    }
+};
+
+exports.createGroup = async (req, res) => {
+    try {
+        const Register_id = req.session.user?.Register_id;
+        if (!Register_id) {
+            return res.redirect('/login');
+        }
+
+        const account = await require('../models/AccountModel').findByRegisterId(Register_id);
+        if (!account) {
+            return res.redirect('/accounts');
+        }
+
+        const { group_name, description, member_ids } = req.body;
+        console.log('Create group request body:', req.body);
+        console.log('Member IDs:', member_ids);
+        
+        if (!group_name) {
+            req.flash('error', 'กรุณากรอกชื่อกลุ่ม');
+            return res.redirect('/group-chat/create');
+        }
+
+        // Create group
+        const groupId = await GroupChatModel.createGroup(
+            group_name,
+            description || '',
+            account.Accounts_id
+        );
+
+        // Add members if selected
+        if (member_ids && Array.isArray(member_ids)) {
+            console.log('Adding members:', member_ids);
+            for (const memberId of member_ids) {
+                try {
+                    console.log('Adding member:', memberId, 'to group:', groupId);
+                    await GroupChatModel.addMember(groupId, memberId, account.Accounts_id);
+                    console.log('Member added successfully');
+                } catch (error) {
+                    console.error('Error adding member:', error);
+                }
+            }
+        } else {
+            console.log('No members to add or member_ids is not an array');
+        }
+
+        req.flash('success', 'สร้างกลุ่มสำเร็จแล้ว');
+        res.redirect('/group-chat');
+    } catch (error) {
+        console.error('Error creating group:', error);
+        req.flash('error', 'เกิดข้อผิดพลาดในการสร้างกลุ่ม');
+        res.redirect('/group-chat/create');
+    }
+};
+
+exports.showGroupChatRoom = async (req, res) => {
+    try {
+        const Register_id = req.session.user?.Register_id;
+        if (!Register_id) {
+            return res.redirect('/login');
+        }
+
+        const account = await require('../models/AccountModel').findByRegisterId(Register_id);
+        if (!account) {
+            return res.redirect('/accounts');
+        }
+
+        const { group_id } = req.params;
+        
+        // Check if user is member of group
+        const isMember = await GroupChatModel.isUserMember(group_id, account.Accounts_id);
+        if (!isMember) {
+            req.flash('error', 'คุณไม่มีสิทธิ์เข้าถึงกลุ่มนี้');
+            return res.redirect('/group-chat');
+        }
+
+        // Get group details
+        console.log('Getting group details for group_id:', group_id);
+        const groupDetails = await GroupChatModel.getGroupDetails(group_id, account.Accounts_id);
+        console.log('Group details result:', groupDetails);
+        
+        if (!groupDetails) {
+            console.log('Group not found');
+            req.flash('error', 'ไม่พบกลุ่ม');
+            return res.redirect('/group-chat');
+        }
+
+        // Get messages
+        const messages = await GroupChatModel.getGroupMessages(group_id, account.Accounts_id);
+        
+        // Get members
+        const members = await GroupChatModel.getGroupMembers(group_id, account.Accounts_id);
+
+        res.render('group-chat-room', {
+            groupDetails: groupDetails,
+            messages: messages,
+            members: members,
+            userId: account.Accounts_id
+        });
+    } catch (error) {
+        console.error('Error loading group chat room:', error);
+        res.status(500).send('Internal server error');
+    }
+};
+
+exports.sendMessage = async (req, res) => {
+    try {
+        console.log('GroupChatController.sendMessage called with body:', req.body);
+        
+        const Register_id = req.session.user?.Register_id;
+        if (!Register_id) {
+            console.log('No Register_id in session');
+            return res.status(401).json({ success: false, error: 'กรุณาเข้าสู่ระบบ' });
+        }
+
+        const account = await require('../models/AccountModel').findByRegisterId(Register_id);
+        if (!account) {
+            console.log('Account not found for Register_id:', Register_id);
+            return res.status(404).json({ success: false, error: 'ไม่พบข้อมูลบัญชี' });
+        }
+
+        console.log('Account found:', { 
+            Accounts_id: account.Accounts_id, 
+            name: `${account.first_name} ${account.last_name}`,
+            account_type: typeof account.Accounts_id,
+            account_value: account.Accounts_id,
+            account_keys: Object.keys(account)
+        });
+
+        const { group_id, message_text } = req.body;
+        
+        console.log('Request data:', { 
+            group_id, 
+            message_text,
+            group_id_type: typeof group_id,
+            group_id_value: group_id
+        });
+        
+        if (!group_id || !message_text) {
+            console.log('Missing required fields');
+            return res.status(400).json({ success: false, error: 'ข้อมูลไม่ครบถ้วน' });
+        }
+
+        // Check if user is member
+        console.log('Checking if user is member...');
+        const isMember = await GroupChatModel.isUserMember(group_id, account.Accounts_id);
+        console.log('Is member result:', isMember);
+        
+        if (!isMember) {
+            return res.status(403).json({ success: false, error: 'คุณไม่มีสิทธิ์ส่งข้อความในกลุ่มนี้' });
+        }
+
+        // Save message
+        console.log('Saving message...');
+        console.log('Account info:', { Accounts_id: account.Accounts_id, name: account.first_name });
+        console.log('Request data:', { group_id, message_text });
+        
+        // ใช้วิธีเดิมที่ทำงานได้
+        const groupId = parseInt(group_id);
+        const senderId = parseInt(account.Accounts_id);
+        const messageText = String(message_text).trim();
+        
+        console.log('Converted parameters for model:', { groupId, senderId, messageText });
+        
+        // ตรวจสอบค่าที่แปลงแล้ว
+        if (isNaN(groupId) || groupId <= 0) {
+            throw new Error('Invalid group_id: ' + group_id);
+        }
+        if (isNaN(senderId) || senderId <= 0) {
+            throw new Error('Invalid sender_id: ' + account.Accounts_id);
+        }
+        if (messageText.length === 0) {
+            throw new Error('Invalid message_text: ' + message_text);
+        }
+        
+        // เรียกใช้ Model
+        const messageId = await GroupChatModel.sendMessage(
+            groupId,
+            senderId,
+            messageText
+        );
+
+        console.log('Message saved with ID:', messageId);
+
+        // Emit to socket.io
+        const io = req.app.get('io');
+        const messageData = {
+            group_id: parseInt(group_id),
+            message_id: messageId,
+            sender_id: account.Accounts_id,
+            sender_name: `${account.first_name} ${account.last_name}`,
+            message_text: message_text.trim(),
+            created_at: new Date()
+        };
+        
+        console.log('Emitting message to socket:', messageData);
+        io.to(`group-${group_id}`).emit('new-group-message', messageData);
+
+        res.json({ success: true, message_id: messageId });
+    } catch (error) {
+        console.error('Error sending group message:', error);
+        res.status(500).json({ success: false, error: 'เกิดข้อผิดพลาดในการส่งข้อความ: ' + error.message });
+    }
+};
+
+exports.addMember = async (req, res) => {
+    try {
+        const Register_id = req.session.user?.Register_id;
+        if (!Register_id) {
+            return res.status(401).json({ success: false, error: 'กรุณาเข้าสู่ระบบ' });
+        }
+
+        const account = await require('../models/AccountModel').findByRegisterId(Register_id);
+        if (!account) {
+            return res.status(404).json({ success: false, error: 'ไม่พบข้อมูลบัญชี' });
+        }
+
+        const { group_id } = req.params;
+        const { user_id } = req.body;
+
+        if (!user_id) {
+            return res.status(400).json({ success: false, error: 'กรุณาเลือกผู้ใช้' });
+        }
+
+        // Add member
+        await GroupChatModel.addMember(group_id, user_id, account.Accounts_id);
+
+        res.json({ success: true, message: 'เพิ่มสมาชิกสำเร็จ' });
+    } catch (error) {
+        console.error('Error adding member:', error);
+        res.status(500).json({ success: false, error: error.message || 'เกิดข้อผิดพลาดในการเพิ่มสมาชิก' });
+    }
+};
+
+exports.removeMember = async (req, res) => {
+    try {
+        const Register_id = req.session.user?.Register_id;
+        if (!Register_id) {
+            return res.status(401).json({ success: false, error: 'กรุณาเข้าสู่ระบบ' });
+        }
+
+        const account = await require('../models/AccountModel').findByRegisterId(Register_id);
+        if (!account) {
+            return res.status(404).json({ success: false, error: 'ไม่พบข้อมูลบัญชี' });
+        }
+
+        const { group_id } = req.params;
+        const { user_id } = req.body;
+
+        if (!user_id) {
+            return res.status(400).json({ success: false, error: 'กรุณาเลือกผู้ใช้' });
+        }
+
+        // Remove member
+        await GroupChatModel.removeMember(group_id, user_id, account.Accounts_id);
+
+        res.json({ success: true, message: 'ลบสมาชิกสำเร็จ' });
+    } catch (error) {
+        console.error('Error removing member:', error);
+        res.status(500).json({ success: false, error: error.message || 'เกิดข้อผิดพลาดในการลบสมาชิก' });
+    }
+};
+
+// Edit group details
+exports.editGroup = async (req, res) => {
+    try {
+        const Register_id = req.session.user?.Register_id;
+        if (!Register_id) {
+            return res.redirect('/login');
+        }
+
+        const account = await require('../models/AccountModel').findByRegisterId(Register_id);
+        if (!account) {
+            return res.redirect('/accounts');
+        }
+
+        const { group_id } = req.params;
+        
+        // Check if user is the creator
+        const groupDetails = await GroupChatModel.getGroupDetails(group_id, account.Accounts_id);
+        if (!groupDetails || groupDetails.created_by !== account.Accounts_id) {
+            req.flash('error', 'คุณไม่มีสิทธิ์แก้ไขกลุ่มนี้');
+            return res.redirect('/group-chat');
+        }
+
+        // Get matched users for adding members
+        let matchedUsers = [];
+        try {
+            matchedUsers = await MatchModel.getConfirmedMatches(account.Accounts_id);
+        } catch (error) {
+            console.error('Error getting matched users:', error);
+            matchedUsers = [];
+        }
+
+        // Get current members
+        const members = await GroupChatModel.getGroupMembers(group_id, account.Accounts_id);
+
+        res.render('edit-group', {
+            groupDetails: groupDetails,
+            matchedUsers: matchedUsers || [],
+            members: members || []
+        });
+    } catch (error) {
+        console.error('Error loading edit group form:', error);
+        req.flash('error', 'เกิดข้อผิดพลาดในการโหลดหน้าแก้ไขกลุ่ม');
+        res.redirect('/group-chat');
+    }
+};
+
+// Update group details
+exports.updateGroup = async (req, res) => {
+    try {
+        const Register_id = req.session.user?.Register_id;
+        if (!Register_id) {
+            return res.status(401).json({ success: false, error: 'กรุณาเข้าสู่ระบบ' });
+        }
+
+        const account = await require('../models/AccountModel').findByRegisterId(Register_id);
+        if (!account) {
+            return res.status(404).json({ success: false, error: 'ไม่พบข้อมูลบัญชี' });
+        }
+
+        const { group_id } = req.params;
+        const { group_name, description } = req.body;
+
+        // Check if user is the creator
+        const groupDetails = await GroupChatModel.getGroupDetails(group_id, account.Accounts_id);
+        if (!groupDetails || groupDetails.created_by !== account.Accounts_id) {
+            return res.status(403).json({ success: false, error: 'คุณไม่มีสิทธิ์แก้ไขกลุ่มนี้' });
+        }
+
+        if (!group_name) {
+            return res.status(400).json({ success: false, error: 'กรุณากรอกชื่อกลุ่ม' });
+        }
+
+        // Update group
+        console.log('Updating group:', { group_id, group_name, description });
+        const success = await GroupChatModel.updateGroup(group_id, group_name, description || '');
+        console.log('Update result:', success);
+        
+        if (success) {
+            res.json({ success: true, message: 'แก้ไขกลุ่มสำเร็จแล้ว' });
+        } else {
+            res.status(500).json({ success: false, error: 'ไม่สามารถอัปเดตข้อมูลได้' });
+        }
+    } catch (error) {
+        console.error('Error updating group:', error);
+        res.status(500).json({ success: false, error: 'เกิดข้อผิดพลาดในการแก้ไขกลุ่ม: ' + error.message });
+    }
+};
+
+// Delete group
+exports.deleteGroup = async (req, res) => {
+    try {
+        const Register_id = req.session.user?.Register_id;
+        if (!Register_id) {
+            return res.status(401).json({ success: false, error: 'กรุณาเข้าสู่ระบบ' });
+        }
+
+        const account = await require('../models/AccountModel').findByRegisterId(Register_id);
+        if (!account) {
+            return res.status(404).json({ success: false, error: 'ไม่พบข้อมูลบัญชี' });
+        }
+
+        const { group_id } = req.params;
+
+        // Check if user is the creator
+        const groupDetails = await GroupChatModel.getGroupDetails(group_id, account.Accounts_id);
+        if (!groupDetails || groupDetails.created_by !== account.Accounts_id) {
+            return res.status(403).json({ success: false, error: 'คุณไม่มีสิทธิ์ลบกลุ่มนี้' });
+        }
+
+        // Delete group
+        console.log('Deleting group:', { group_id });
+        const success = await GroupChatModel.deleteGroup(group_id);
+        console.log('Delete result:', success);
+        
+        if (success) {
+            res.json({ success: true, message: 'ลบกลุ่มสำเร็จแล้ว' });
+        } else {
+            res.status(500).json({ success: false, error: 'ไม่สามารถลบกลุ่มได้' });
+        }
+    } catch (error) {
+        console.error('Error deleting group:', error);
+        res.status(500).json({ success: false, error: 'เกิดข้อผิดพลาดในการลบกลุ่ม' });
+    }
+};
+
+// Leave group
+exports.leaveGroup = async (req, res) => {
+    try {
+        const Register_id = req.session.user?.Register_id;
+        if (!Register_id) {
+            return res.status(401).json({ success: false, error: 'กรุณาเข้าสู่ระบบ' });
+        }
+
+        const account = await require('../models/AccountModel').findByRegisterId(Register_id);
+        if (!account) {
+            return res.status(404).json({ success: false, error: 'ไม่พบข้อมูลบัญชี' });
+        }
+
+        const { group_id } = req.params;
+
+        // Check if user is member
+        const isMember = await GroupChatModel.isUserMember(group_id, account.Accounts_id);
+        if (!isMember) {
+            return res.status(403).json({ success: false, error: 'คุณไม่ได้เป็นสมาชิกของกลุ่มนี้' });
+        }
+
+        // Check if user is the creator
+        const groupDetails = await GroupChatModel.getGroupDetails(group_id);
+        if (groupDetails && groupDetails.created_by === account.Accounts_id) {
+            return res.status(403).json({ success: false, error: 'ผู้สร้างกลุ่มไม่สามารถออกจากกลุ่มได้ กรุณาลบกลุ่มแทน' });
+        }
+
+        // Leave group
+        await GroupChatModel.removeMember(group_id, account.Accounts_id, account.Accounts_id);
+
+        res.json({ success: true, message: 'ออกจากกลุ่มสำเร็จแล้ว' });
+    } catch (error) {
+        console.error('Error leaving group:', error);
+        res.status(500).json({ success: false, error: 'เกิดข้อผิดพลาดในการออกจากกลุ่ม' });
+    }
+};
+
+// Get invite members (matched users not in group)
+exports.getInviteMembers = async (req, res) => {
+    try {
+        const Register_id = req.session.user?.Register_id;
+        if (!Register_id) {
+            return res.status(401).json({ success: false, error: 'กรุณาเข้าสู่ระบบ' });
+        }
+
+        const account = await require('../models/AccountModel').findByRegisterId(Register_id);
+        if (!account) {
+            return res.status(404).json({ success: false, error: 'ไม่พบข้อมูลบัญชี' });
+        }
+
+        const { group_id } = req.params;
+
+        // Check if user is the creator
+        const groupDetails = await GroupChatModel.getGroupDetails(group_id, account.Accounts_id);
+        if (!groupDetails || groupDetails.created_by !== account.Accounts_id) {
+            return res.status(403).json({ success: false, error: 'คุณไม่มีสิทธิ์เชิญสมาชิก' });
+        }
+
+        // Get matched users not in group
+        const matchedUsers = await MatchModel.getConfirmedMatches(account.Accounts_id);
+        const currentMembers = await GroupChatModel.getGroupMembers(group_id, account.Accounts_id);
+        const currentMemberIds = currentMembers.map(member => member.user_id);
+        
+        const availableMembers = matchedUsers.filter(user => 
+            !currentMemberIds.includes(user.Accounts_id)
+        );
+
+        res.json({ 
+            success: true, 
+            members: availableMembers 
+        });
+    } catch (error) {
+        console.error('Error getting invite members:', error);
+        res.status(500).json({ success: false, error: 'เกิดข้อผิดพลาดในการโหลดข้อมูล' });
+    }
+};
+
+// Add multiple members to group
+exports.addMembers = async (req, res) => {
+    try {
+        const Register_id = req.session.user?.Register_id;
+        if (!Register_id) {
+            return res.status(401).json({ success: false, error: 'กรุณาเข้าสู่ระบบ' });
+        }
+
+        const account = await require('../models/AccountModel').findByRegisterId(Register_id);
+        if (!account) {
+            return res.status(404).json({ success: false, error: 'ไม่พบข้อมูลบัญชี' });
+        }
+
+        const { group_id } = req.params;
+        const { member_ids } = req.body;
+
+        // Check if user is the creator
+        const groupDetails = await GroupChatModel.getGroupDetails(group_id, account.Accounts_id);
+        if (!groupDetails || groupDetails.created_by !== account.Accounts_id) {
+            return res.status(403).json({ success: false, error: 'คุณไม่มีสิทธิ์เชิญสมาชิก' });
+        }
+
+        if (!member_ids || !Array.isArray(member_ids)) {
+            return res.status(400).json({ success: false, error: 'ข้อมูลไม่ถูกต้อง' });
+        }
+
+        // Add each member
+        const results = [];
+        for (const memberId of member_ids) {
+            try {
+                await GroupChatModel.addMember(group_id, memberId, account.Accounts_id);
+                results.push({ memberId, success: true });
+            } catch (error) {
+                console.error(`Error adding member ${memberId}:`, error);
+                results.push({ memberId, success: false, error: error.message });
+            }
+        }
+
+        const successCount = results.filter(r => r.success).length;
+        const failCount = results.filter(r => !r.success).length;
+
+        res.json({ 
+            success: true, 
+            message: `เชิญสมาชิกสำเร็จ ${successCount} คน${failCount > 0 ? `, ล้มเหลว ${failCount} คน` : ''}`,
+            results: results
+        });
+    } catch (error) {
+        console.error('Error adding members:', error);
+        res.status(500).json({ success: false, error: 'เกิดข้อผิดพลาดในการเชิญสมาชิก' });
+    }
+};

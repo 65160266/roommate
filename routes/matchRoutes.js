@@ -1,16 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const MatchController = require('../controllers/MatchController');
-const { isAuthenticated } = require('../middleware/authMiddleware');
+const { hasAccountData } = require('../middleware/authMiddleware');
 
 // Apply authentication middleware to all routes
-router.use(isAuthenticated);
+router.use(hasAccountData);
 
-// GET /match - Show all users that can be matched
-router.get('/', MatchController.showMatchableUsers);
-
-// POST /match - Send a match request
-router.post('/', MatchController.sendMatchRequest);
+// GET /match - Show all users that can be matched (redirect to home)
+router.get('/', (req, res) => {
+  res.redirect('/home');
+});
 
 // GET /in-progress - Show pending matches (in-progress)
 router.get('/in-progress', MatchController.showInProgress);
