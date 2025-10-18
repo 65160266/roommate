@@ -28,6 +28,13 @@ exports.login = async (req, res) => {
 exports.register = async (req, res) => {
   try {
     const { email, password } = req.body;
+    
+    // ตรวจสอบ email domain
+    if (!email.endsWith('@go.buu.ac.th')) {
+      req.flash("validationErrors", ["กรุณาใช้อีเมล @go.buu.ac.th เท่านั้น"]);
+      return res.redirect("/register");
+    }
+    
     const exist = await Register.findByEmail(email);
     if (exist) {
       req.flash("validationErrors", ["อีเมลนี้ถูกใช้แล้ว"]);

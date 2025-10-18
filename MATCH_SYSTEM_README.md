@@ -265,4 +265,3 @@ app.set('env', 'development');
 
 ## Support
 For issues or questions, check the application logs and database queries for detailed error information.
-

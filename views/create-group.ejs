@@ -4,95 +4,109 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/match.css">
-    <title><%= title %> - RoomMate</title>
+    <link rel="stylesheet" href="/css/header.css">
+    <link rel="stylesheet" href="/css/create-group.css">
+    <title>สร้างกลุ่ม - RoomMate</title>
 </head>
-<body class="bg-gray-100">
+
+<body class="home-container">
     <%- include('partials/homeheader') %>
-
-    <!-- Flash Messages -->
-    <% if (typeof session !== 'undefined' && session.flash) { %>
-        <% if (session.flash.success) { %>
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 mx-4">
-                <%= session.flash.success %>
-            </div>
-        <% } %>
-        <% if (session.flash.error) { %>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 mx-4">
-                <%= session.flash.error %>
-            </div>
-        <% } %>
-    <% } %>
-
-    <div class="container mx-auto mt-6 max-w-2xl">
-        <div class="bg-white rounded-lg shadow-lg p-6">
-            <div class="flex items-center justify-between mb-6">
-                <h1 class="text-2xl font-bold text-gray-800">Create Group Chat</h1>
-                <a href="/group-chat" class="text-gray-500 hover:text-gray-700">
+    
+    <div class="create-group-container">
+        <div class="create-group-header">
+            <div class="create-group-header-info">
+                <a href="/group-chat" class="create-group-back">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                     </svg>
                 </a>
+                <h1 class="create-group-title">สร้างกลุ่มใหม่</h1>
             </div>
+        </div>
 
-            <form action="/group-chat/create" method="POST" class="space-y-6">
-                <div>
-                    <label for="group_name" class="block text-sm font-medium text-gray-700 mb-2">
-                        Group Name *
-                    </label>
-                    <input type="text" 
-                           id="group_name" 
-                           name="group_name" 
-                           required
-                           maxlength="100"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           placeholder="Enter group name">
+        <div class="create-group-content">
+            <form class="create-group-form" action="/group-chat/create" method="POST">
+                <!-- Group Information -->
+                <div class="form-section">
+                    <h3 class="form-section-title">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                        ข้อมูลกลุ่ม
+                    </h3>
+                    <div class="form-group">
+                        <label for="group_name" class="form-label">ชื่อกลุ่ม</label>
+                        <input type="text" id="group_name" name="group_name" class="form-input" placeholder="เช่น กลุ่มเพื่อนหอพัก" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description" class="form-label">คำอธิบาย</label>
+                        <textarea id="description" name="description" class="form-textarea" rows="3" placeholder="อธิบายเกี่ยวกับกลุ่ม..."></textarea>
+                    </div>
                 </div>
 
-                <div>
-                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
-                        Description (Optional)
-                    </label>
-                    <textarea id="description" 
-                              name="description" 
-                              rows="3"
-                              maxlength="500"
-                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="Describe what this group is about..."></textarea>
-                </div>
-
-                <div class="bg-blue-50 border border-blue-200 rounded-md p-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <h3 class="text-sm font-medium text-blue-800">
-                                Group Creation Info
-                            </h3>
-                            <div class="mt-2 text-sm text-blue-700">
-                                <ul class="list-disc list-inside space-y-1">
-                                    <li>You will be the admin of this group</li>
-                                    <li>You can add members after creating the group</li>
-                                    <li>Group name must be unique and descriptive</li>
-                                </ul>
-                            </div>
+                <!-- Invite Members -->
+                <div class="form-section">
+                    <h3 class="form-section-title">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                        </svg>
+                        เชิญสมาชิก
+                    </h3>
+                    <div class="form-group">
+                        <label class="form-label">เลือกเพื่อนที่แมทแล้ว</label>
+                        <div class="members-selection">
+                            <% if (matchedUsers && matchedUsers.length > 0) { %>
+                                <% matchedUsers.forEach(user => { %>
+                                    <div class="member-card" data-user-id="<%= user.Accounts_id %>">
+                                        <input type="checkbox" 
+                                               id="member_<%= user.Accounts_id %>" 
+                                               name="member_ids[]" 
+                                               value="<%= user.Accounts_id %>" 
+                                               class="member-checkbox">
+                                        <label for="member_<%= user.Accounts_id %>" class="member-card-content">
+                                            <div class="member-avatar">
+                                                <img src="<%= user.image || '/images/default-avatar.png' %>" 
+                                                     alt="<%= user.first_name %>" 
+                                                     class="member-avatar-img">
+                                            </div>
+                                            <div class="member-info">
+                                                <div class="member-name"><%= user.first_name %> <%= user.last_name %></div>
+                                                <div class="member-details">
+                                                    <span class="member-age"><%= user.age || 'ไม่ระบุ' %> ปี</span>
+                                                    <span class="member-faculty"><%= user.faculty_name || 'ไม่ระบุ' %></span>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                <% }) %>
+                            <% } else { %>
+                                <div class="no-members">
+                                    <div class="no-members-icon">
+                                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <p class="no-members-text">คุณยังไม่มีเพื่อนที่แมทแล้ว</p>
+                                    <a href="/home" class="no-members-btn">ไปหาเพื่อนใหม่</a>
+                                </div>
+                            <% } %>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex items-center justify-end space-x-4">
-                    <a href="/group-chat" 
-                       class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
-                        Cancel
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <a href="/group-chat" class="btn-cancel">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        ยกเลิก
                     </a>
-                    <button type="submit" 
-                            class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
-                        Create Group
+                    <button type="submit" class="btn-create">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        สร้างกลุ่ม
                     </button>
                 </div>
             </form>
@@ -100,33 +114,78 @@
     </div>
 
     <script>
-        // Auto-hide flash messages after 5 seconds
-        setTimeout(() => {
-            const flashMessages = document.querySelectorAll('.bg-green-100, .bg-red-100');
-            flashMessages.forEach(msg => {
-                msg.style.transition = 'opacity 0.5s';
-                msg.style.opacity = '0';
-                setTimeout(() => msg.remove(), 500);
-            });
-        }, 5000);
-
-        // Form validation
-        document.querySelector('form').addEventListener('submit', function(e) {
-            const groupName = document.getElementById('group_name').value.trim();
+        // Member selection functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const memberCards = document.querySelectorAll('.member-card');
+            const selectedCount = document.createElement('div');
+            selectedCount.className = 'selected-count';
+            selectedCount.textContent = '0 สมาชิกที่เลือก';
             
-            if (!groupName) {
-                e.preventDefault();
-                alert('Group name is required');
-                return;
+            // Add selected count display
+            const formSection = document.querySelector('.form-section:last-of-type');
+            if (formSection) {
+                formSection.appendChild(selectedCount);
             }
             
-            if (groupName.length < 3) {
-                e.preventDefault();
-                alert('Group name must be at least 3 characters long');
-                return;
+            memberCards.forEach((card) => {
+                const checkbox = card.querySelector('.member-checkbox');
+                const label = card.querySelector('.member-card-content');
+                
+                if (!checkbox || !label) return;
+                
+                // Click on card to toggle checkbox
+                card.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    checkbox.checked = !checkbox.checked;
+                    
+                    if (checkbox.checked) {
+                        card.classList.add('selected');
+                        label.classList.add('selected');
+                    } else {
+                        card.classList.remove('selected');
+                        label.classList.remove('selected');
+                    }
+                    
+                    // Update selected count
+                    const selected = document.querySelectorAll('.member-checkbox:checked').length;
+                    selectedCount.textContent = `${selected} สมาชิกที่เลือก`;
+                });
+                
+                // Also handle checkbox change event
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        card.classList.add('selected');
+                        label.classList.add('selected');
+                    } else {
+                        card.classList.remove('selected');
+                        label.classList.remove('selected');
+                    }
+                    
+                    // Update selected count
+                    const selected = document.querySelectorAll('.member-checkbox:checked').length;
+                    selectedCount.textContent = `${selected} สมาชิกที่เลือก`;
+                });
+            });
+            
+            // Form submission
+            const form = document.querySelector('.create-group-form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    const selectedMembers = document.querySelectorAll('.member-checkbox:checked');
+                    console.log('Selected members:', selectedMembers.length);
+                    
+                    // Ensure at least one member is selected (optional)
+                    if (selectedMembers.length === 0) {
+                        if (!confirm('คุณไม่ได้เลือกสมาชิกเลย ต้องการสร้างกลุ่มเปล่าหรือไม่?')) {
+                            e.preventDefault();
+                            return false;
+                        }
+                    }
+                });
             }
         });
     </script>
 </body>
 </html>
-

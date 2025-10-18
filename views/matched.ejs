@@ -4,129 +4,102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/match.css">
-    <title><%= title %> - RoomMate</title>
+    <link rel="stylesheet" href="/css/header.css">
+    <link rel="stylesheet" href="/css/home.css">
+    <title>Matched Users</title>
 </head>
-<body class="bg-gray-100">
+<body class="home-container">
     <%- include('partials/homeheader') %>
 
-    <!-- Flash Messages -->
-    <% if (typeof session !== 'undefined' && session.flash) { %>
-        <% if (session.flash.success) { %>
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                <%= session.flash.success %>
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-6">
+        <!-- Header Section -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
+            <!-- Left Side - Navigation Tabs -->
+            <div class="flex flex-col sm:flex-row gap-4 mb-6 lg:mb-0">
+                <a href="/home" class="nav-tab">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    จับคู่หารูมแมท
+                </a>
+                <a href="/match/in-progress" class="nav-tab">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    อยู่ระหว่างดำเนินการจับคู่ 
+                </a>
+                <button class="nav-tab active">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                    จับคู่สำเร็จ
+                </button>
             </div>
-        <% } %>
-        <% if (session.flash.error) { %>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                <%= session.flash.error %>
-            </div>
-        <% } %>
-    <% } %>
-
-    <!-- Navigation Tabs -->
-    <div class="container mx-auto mt-6">
-        <div class="flex space-x-4 mb-6">
-            <a href="/match" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Find Roommates</a>
-            <a href="/match/in-progress" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">In-Progress</a>
-            <a href="/match/matched" class="px-4 py-2 bg-blue-600 text-white rounded">Matched</a>
         </div>
 
-        <h2 class="text-2xl font-bold mb-6">Your Matched Roommates</h2>
-
-        <% if (confirmedMatches && confirmedMatches.length > 0) { %>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <% confirmedMatches.forEach(match => { %>
-                    <div class="bg-white shadow-lg rounded-lg p-6 border-l-4 border-green-500 hover:shadow-xl transition-shadow">
-                        <div class="text-center mb-4">
-                            <div class="relative">
-                                <img src="<%= match.matched_user_image || '/images/default-avatar.png' %>" 
-                                     alt="<%= match.matched_user_name %>" 
-                                     class="w-24 h-24 rounded-full mx-auto mb-3 object-cover">
-                                <div class="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                                    <span class="text-white text-sm">✓</span>
+        <!-- Content -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">เพื่อนร่วมห้องที่จับคู่แล้ว</h2>
+            
+            <% if (matchedUsers && matchedUsers.length > 0) { %>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <% for (var i = 0; i < matchedUsers.length; i++) { %>
+                        <% var match = matchedUsers[i]; %>
+                        <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200 shadow-sm hover:shadow-md transition-all duration-300">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <img src="<%= match.image || '/images/default-avatar.png' %>" 
+                                     alt="<%= match.first_name %>" 
+                                     class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-sm font-semibold text-gray-900 truncate">
+                                        <%= match.first_name %> <%= match.last_name %>
+                                    </h3>
+                                    <p class="text-xs text-gray-600 flex items-center mt-1">
+                                        <svg class="w-3 h-3 mr-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                        อายุ <%= match.age %> ปี
+                                    </p>
+                                    <p class="text-xs text-gray-600 flex items-center mt-1">
+                                        <svg class="w-3 h-3 mr-1 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                        </svg>
+                                        <%= match.faculty_name || 'ไม่ระบุ' %>
+                                    </p>
                                 </div>
                             </div>
-                            <h4 class="text-xl font-semibold text-gray-800 mb-2">
-                                <%= match.matched_user_name %>
-                            </h4>
-                            <p class="text-gray-600 text-sm mb-1">
-                                <span class="font-medium">Faculty:</span> <%= match.matched_user_faculty || 'Not specified' %>
-                            </p>
-                            <p class="text-gray-600 text-sm mb-1">
-                                <span class="font-medium">Major:</span> <%= match.matched_user_major || 'Not specified' %>
-                            </p>
-                            <p class="text-gray-600 text-sm mb-3">
-                                <span class="font-medium">Age:</span> <%= match.matched_user_age || 'Not specified' %>
-                            </p>
-                        </div>
-                        
-                        <div class="text-center">
-                            <div class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800 mb-4">
-                                <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                                Matched Successfully
-                            </div>
-                            <p class="text-gray-500 text-xs mb-4">
-                                Matched on <%= new Date(match.updated_at).toLocaleDateString() %>
-                            </p>
-                            
-                            <!-- Action Buttons -->
-                            <div class="space-y-2">
-                                <button class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
-                                    💬 Start Chat
-                                </button>
-                                <button class="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors">
-                                    📋 View Profile
-                                </button>
+                            <div class="mt-3">
+                                <a href="/chat/start/<%= match.Accounts_id %>" 
+                                   class="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:from-green-600 hover:to-emerald-600 transition-all duration-300 flex items-center justify-center shadow-sm hover:shadow-md">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                    </svg>
+                                    แชท
+                                </a>
                             </div>
                         </div>
+                    <% } %>
+                </div>
+            <% } else { %>
+                <div class="text-center py-16">
+                    <div class="bg-gradient-to-br from-gray-50 to-green-50 rounded-2xl p-8 border border-gray-200">
+                        <svg class="w-20 h-20 text-green-400 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                        </svg>
+                        <h3 class="text-xl font-semibold text-gray-700 mb-3">ยังไม่มีเพื่อนร่วมห้อง</h3>
+                        <p class="text-gray-500 mb-6">เริ่มต้นการค้นหาเพื่อนร่วมห้องได้ที่หน้า Find Roommates</p>
+                        <a href="/home" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-300 shadow-sm hover:shadow-md">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            เริ่มค้นหา
+                        </a>
                     </div>
-                <% }) %>
-            </div>
-        <% } else { %>
-            <div class="text-center py-12">
-                <div class="text-gray-500 text-lg mb-4">
-                    <div class="text-6xl mb-4">🤝</div>
-                    <h3 class="text-xl font-semibold mb-2">No Matches Yet</h3>
-                    <p>You haven't been matched with any roommates yet.</p>
-                    <p class="mt-2">Start by browsing available roommates and sending match requests!</p>
                 </div>
-                <div class="mt-6">
-                    <a href="/match" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        Find Roommates
-                    </a>
-                </div>
-            </div>
-        <% } %>
+            <% } %>
+        </div>
     </div>
-
-    <!-- Success Animation -->
-    <script>
-        // Auto-hide flash messages after 5 seconds
-        setTimeout(() => {
-            const flashMessages = document.querySelectorAll('.bg-green-100, .bg-red-100');
-            flashMessages.forEach(msg => {
-                msg.style.transition = 'opacity 0.5s';
-                msg.style.opacity = '0';
-                setTimeout(() => msg.remove(), 500);
-            });
-        }, 5000);
-
-        // Add some animation to matched cards
-        document.addEventListener('DOMContentLoaded', function() {
-            const cards = document.querySelectorAll('.bg-white.shadow-lg');
-            cards.forEach((card, index) => {
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(20px)';
-                setTimeout(() => {
-                    card.style.transition = 'opacity 0.5s, transform 0.5s';
-                    card.style.opacity = '1';
-                    card.style.transform = 'translateY(0)';
-                }, index * 100);
-            });
-        });
-    </script>
 </body>
 </html>
+

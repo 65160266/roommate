@@ -4,357 +4,259 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/match.css">
-    <title><%= title %> - RoomMate</title>
-    <style>
-        .chat-container {
-            height: calc(100vh - 200px);
-            max-height: 600px;
-        }
-        .message-bubble {
-            max-width: 70%;
-            word-wrap: break-word;
-        }
-        .message-sent {
-            background-color: #3B82F6;
-            color: white;
-            border-bottom-right-radius: 0;
-        }
-        .message-received {
-            background-color: #E5E7EB;
-            color: #1F2937;
-            border-bottom-left-radius: 0;
-        }
-        .member-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-    </style>
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="/css/header.css">
+    <link rel="stylesheet" href="/css/group-chat-room.css">
+    <title><%= groupDetails.group_name %> - RoomMate</title>
 </head>
-<body class="bg-gray-100">
+<body class="home-container">
     <%- include('partials/homeheader') %>
-
-    <!-- Flash Messages -->
-    <% if (typeof session !== 'undefined' && session.flash) { %>
-        <% if (session.flash.success) { %>
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 mx-4">
-                <%= session.flash.success %>
-            </div>
-        <% } %>
-        <% if (session.flash.error) { %>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 mx-4">
-                <%= session.flash.error %>
-            </div>
-        <% } %>
-    <% } %>
-
-    <div class="container mx-auto p-4">
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-            <!-- Group Chat Header -->
-            <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <a href="/group-chat" class="text-white hover:text-blue-200">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                            </svg>
-                        </a>
-                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                            <%= groupDetails.group_name.charAt(0).toUpperCase() %>
-                        </div>
-                        <div>
-                            <h2 class="text-xl font-semibold"><%= groupDetails.group_name %></h2>
-                            <p class="text-sm text-blue-100">
-                                <%= groupMembers.length %> members
-                                <% if (groupDetails.user_role === 'admin') { %>
-                                    • You are admin
-                                <% } %>
-                            </p>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <button onclick="toggleMembers()" class="text-white hover:text-blue-200 p-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                            </svg>
-                        </button>
-                        <% if (groupDetails.user_role === 'admin') { %>
-                            <button onclick="toggleGroupSettings()" class="text-white hover:text-blue-200 p-2">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                </svg>
-                            </button>
-                        <% } %>
-                    </div>
+    
+    <div class="group-chat-room-container">
+        <!-- Group Chat Header -->
+        <div class="group-chat-header">
+            <div class="group-chat-header-info">
+                <a href="/group-chat" class="group-chat-back">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </a>
+                <div class="group-chat-avatar">
+                    <svg class="group-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                </div>
+                <div class="group-chat-details">
+                    <div class="group-chat-name"><%= groupDetails.group_name %></div>
+                    <div class="group-chat-members-count"><%= groupDetails.member_count %> สมาชิก</div>
                 </div>
             </div>
-
-            <!-- Members Panel (Hidden by default) -->
-            <div id="membersPanel" class="hidden bg-gray-50 border-b border-gray-200 p-4">
-                <h3 class="text-lg font-semibold text-gray-800 mb-3">Group Members</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <% groupMembers.forEach(member => { %>
-                        <div class="flex items-center space-x-3 p-2 bg-white rounded-lg">
-                            <img src="<%= member.user_image || '/images/default-avatar.png' %>" 
-                                 alt="<%= member.user_name %>" 
-                                 class="member-avatar">
-                            <div class="flex-1">
-                                <p class="font-medium text-gray-900">
-                                    <%= member.user_name %>
-                                    <% if (member.role === 'admin') { %>
-                                        <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full ml-2">Admin</span>
-                                    <% } %>
-                                </p>
-                                <p class="text-sm text-gray-500">
-                                    Joined <%= new Date(member.joined_at).toLocaleDateString() %>
-                                </p>
-                            </div>
-                            <% if (groupDetails.user_role === 'admin' && member.user_id !== currentUser.Accounts_id) { %>
-                                <button onclick="removeMember(<%= member.user_id %>)" 
-                                        class="text-red-500 hover:text-red-700 p-1">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                </button>
-                            <% } %>
-                        </div>
-                    <% }) %>
-                </div>
-                <% if (groupDetails.user_role === 'admin') { %>
-                    <div class="mt-4 pt-4 border-t border-gray-200">
-                        <button onclick="showAddMemberModal()" 
-                                class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                            ➕ Add Member
-                        </button>
-                    </div>
-                <% } %>
+            <div class="group-chat-actions">
+                <button class="group-chat-members-btn" onclick="toggleMembersSidebar()">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    สมาชิก
+                </button>
             </div>
+        </div>
 
-            <!-- Group Settings Panel (Hidden by default) -->
-            <div id="groupSettingsPanel" class="hidden bg-gray-50 border-b border-gray-200 p-4">
-                <h3 class="text-lg font-semibold text-gray-800 mb-3">Group Settings</h3>
-                <form action="/group-chat/<%= groupDetails.group_id %>/update" method="POST" class="space-y-4">
-                    <div>
-                        <label for="group_name" class="block text-sm font-medium text-gray-700 mb-1">
-                            Group Name
-                        </label>
-                        <input type="text" 
-                               id="group_name" 
-                               name="group_name" 
-                               value="<%= groupDetails.group_name %>"
-                               required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
-                            Description
-                        </label>
-                        <textarea id="description" 
-                                  name="description" 
-                                  rows="3"
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"><%= groupDetails.description || '' %></textarea>
-                    </div>
-                    <div class="flex items-center justify-end space-x-2">
-                        <button type="button" 
-                                onclick="toggleGroupSettings()"
-                                class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-                            Cancel
-                        </button>
-                        <button type="submit" 
-                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                            Save Changes
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Chat Messages Container -->
-            <div id="chatContainer" class="chat-container p-4 overflow-y-auto flex flex-col space-y-4">
-                <input type="hidden" id="groupId" value="<%= groupDetails.group_id %>">
+        <div class="group-chat-main">
+            <!-- Messages Area -->
+            <div class="group-messages-container" id="messages">
                 <% if (messages && messages.length > 0) { %>
                     <% messages.forEach(message => { %>
-                        <div class="flex <%= message.sender_id === currentUser.Accounts_id ? 'justify-end' : 'justify-start' %>">
-                            <div class="message-bubble px-4 py-2 rounded-lg <%= message.sender_id === currentUser.Accounts_id ? 'message-sent' : 'message-received' %>">
-                                <% if (message.sender_id !== currentUser.Accounts_id) { %>
-                                    <p class="text-xs font-medium mb-1 opacity-70"><%= message.sender_name %></p>
+                        <div class="group-message <%= message.sender_id == userId ? 'group-message-sent' : 'group-message-received' %>">
+                            <div class="group-message-bubble">
+                                <% if (message.sender_id != userId && message.sender_name) { %>
+                                    <div class="group-message-sender"><%= message.sender_name %></div>
                                 <% } %>
-                                <p class="text-sm"><%= message.message_text %></p>
-                                <p class="text-xs mt-1 opacity-70"><%= new Date(message.created_at).toLocaleTimeString() %></p>
+                                <div class="group-message-text"><%= message.message_text %></div>
+                                <div class="group-message-time">
+                                    <%= new Date(message.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) %>
+                                </div>
                             </div>
                         </div>
                     <% }) %>
                 <% } else { %>
-                    <div class="text-center text-gray-500 py-10">
-                        <p>No messages yet. Start the conversation!</p>
+                    <div class="group-messages-empty">
+                        <div class="group-messages-empty-icon">
+                            <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="group-messages-empty-title">เริ่มต้นการสนทนา</h3>
+                        <p class="group-messages-empty-text">ส่งข้อความแรกในกลุ่มนี้</p>
                     </div>
                 <% } %>
             </div>
 
-            <!-- Message Input -->
-            <div class="p-4 border-t border-gray-200">
-                <form id="messageForm" class="flex">
-                    <input type="text" 
-                           id="messageInput" 
-                           placeholder="Type your message..." 
-                           class="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-                           maxlength="1000"
-                           required>
-                    <button type="submit" 
-                            class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition-colors">
-                        Send
+            <!-- Members Sidebar -->
+            <div class="group-members-sidebar" id="membersSidebar">
+                <div class="group-members-header">
+                    <h3 class="group-members-title">สมาชิก (<%= groupDetails.member_count %>)</h3>
+                    <button class="group-members-close" onclick="toggleMembersSidebar()">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
                     </button>
-                </form>
+                </div>
+                
+                
+                <!-- Member Avatars Row -->
+                <div class="member-avatars-row">
+                    <h4 class="avatars-title">สมาชิก</h4>
+                    <div class="avatars-container">
+                        <% if (members && members.length > 0) { %>
+                            <% members.forEach(member => { %>
+                                <div class="member-avatar-item" title="<%= member.first_name %> <%= member.last_name %>">
+                                    <img src="<%= member.image || '/images/default-avatar.png' %>" 
+                                         alt="<%= member.first_name %>" 
+                                         class="member-avatar-img">
+                                    <% if (member.user_id == userId) { %>
+                                        <div class="avatar-you-badge">คุณ</div>
+                                    <% } %>
+                                    <% if (member.role === 'leader') { %>
+                                        <div class="avatar-leader-badge">ผู้นำ</div>
+                                    <% } %>
+                                    <% if (groupDetails.created_by == userId && member.user_id != userId) { %>
+                                        <button class="avatar-remove-btn" onclick="confirmRemoveMember(<%= member.user_id %>, '<%= member.first_name %>')" title="ลบสมาชิก">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    <% } %>
+                                </div>
+                            <% }) %>
+                        <% } else { %>
+                            <div class="no-members">
+                                <p>ไม่มีสมาชิก</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+                
+                <!-- Group Management Options -->
+                <div class="group-management-options">
+                    <% if (groupDetails.created_by == userId) { %>
+                        <!-- Creator Options -->
+                        <div class="management-section">
+                            <h4 class="management-section-title">จัดการกลุ่ม</h4>
+                            <div class="management-buttons">
+                                <button class="management-btn edit-btn" onclick="showEditModal()">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    แก้ไขกลุ่ม
+                                </button>
+                                <button class="management-btn invite-btn" onclick="showInviteModal()">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    เชิญสมาชิก
+                                </button>
+                                <button class="management-btn danger-btn" onclick="confirmDeleteGroup()">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    ลบกลุ่ม
+                                </button>
+                            </div>
+                        </div>
+                    <% } else { %>
+                        <!-- Member Options -->
+                        <div class="management-section">
+                            <h4 class="management-section-title">ตัวเลือก</h4>
+                            <div class="management-buttons">
+                                <button class="management-btn danger-btn" onclick="confirmLeaveGroup()">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                    </svg>
+                                    ออกจากกลุ่ม
+                                </button>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
             </div>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="group-chat-input-container">
+            <form class="group-chat-input-form" id="messageForm">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    class="group-chat-input" 
+                    placeholder="พิมพ์ข้อความในกลุ่ม..."
+                    autocomplete="off"
+                    required
+                >
+                <button type="submit" class="group-chat-send-button" id="sendButton">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                    ส่ง
+                </button>
+            </form>
         </div>
     </div>
 
-    <!-- Add Member Modal -->
-    <div id="addMemberModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Add Member to Group</h3>
-                <div id="availableUsers" class="max-h-60 overflow-y-auto space-y-2">
-                    <!-- Users will be loaded here -->
+    <!-- Edit Group Modal -->
+    <div class="modal-overlay" id="editModal" style="display: none;">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title">แก้ไขกลุ่ม</h3>
+                <button class="modal-close" onclick="closeEditModal()">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form id="editGroupForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="editGroupName" class="form-label">ชื่อกลุ่ม</label>
+                        <input type="text" id="editGroupName" class="form-input" value="<%= groupDetails.group_name %>" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editGroupDescription" class="form-label">คำอธิบาย</label>
+                        <textarea id="editGroupDescription" class="form-textarea" rows="3"><%= groupDetails.description || '' %></textarea>
+                    </div>
                 </div>
-                <div class="flex items-center justify-end space-x-2 mt-4">
-                    <button onclick="hideAddMemberModal()" 
-                            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-                        Cancel
-                    </button>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeEditModal()">ยกเลิก</button>
+                    <button type="submit" class="btn-save">บันทึก</button>
                 </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Invite Members Modal -->
+    <div class="modal-overlay" id="inviteModal" style="display: none;">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title">เชิญสมาชิก</h3>
+                <button class="modal-close" onclick="closeInviteModal()">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="invite-members-list" id="inviteMembersList">
+                    <!-- Members will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeInviteModal()">ยกเลิก</button>
+                <button type="button" class="btn-save" onclick="inviteSelectedMembers()">เชิญสมาชิก</button>
             </div>
         </div>
     </div>
 
     <script>
-        const groupId = document.getElementById('groupId').value;
+        const groupId = <%= groupDetails.group_id %>;
+        const userId = <%= userId %>;
+        const messagesDiv = document.getElementById('messages');
         const messageForm = document.getElementById('messageForm');
         const messageInput = document.getElementById('messageInput');
-        const chatContainer = document.getElementById('chatContainer');
+        const sendButton = document.getElementById('sendButton');
+        const membersSidebar = document.getElementById('membersSidebar');
 
-        // Auto-scroll to bottom
-        function scrollToBottom() {
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
+        // Initialize Socket.IO
+        const socket = io();
 
-        // Toggle members panel
-        function toggleMembers() {
-            const panel = document.getElementById('membersPanel');
-            panel.classList.toggle('hidden');
-            // Hide settings panel if open
-            document.getElementById('groupSettingsPanel').classList.add('hidden');
-        }
+        // Join group chat room
+        socket.emit('join-group-chat', groupId);
 
-        // Toggle group settings panel
-        function toggleGroupSettings() {
-            const panel = document.getElementById('groupSettingsPanel');
-            panel.classList.toggle('hidden');
-            // Hide members panel if open
-            document.getElementById('membersPanel').classList.add('hidden');
-        }
-
-        // Show add member modal
-        function showAddMemberModal() {
-            const modal = document.getElementById('addMemberModal');
-            const usersContainer = document.getElementById('availableUsers');
-            
-            // Load available users
-            fetch(`/group-chat/${groupId}/available-users`)
-                .then(response => response.json())
-                .then(users => {
-                    usersContainer.innerHTML = '';
-                    if (users.length === 0) {
-                        usersContainer.innerHTML = '<p class="text-gray-500 text-center">No available users to add</p>';
-                    } else {
-                        users.forEach(user => {
-                            const userDiv = document.createElement('div');
-                            userDiv.className = 'flex items-center justify-between p-2 bg-gray-50 rounded-lg';
-                            userDiv.innerHTML = `
-                                <div class="flex items-center space-x-2">
-                                    <img src="${user.image || '/images/default-avatar.png'}" 
-                                         alt="${user.first_name} ${user.last_name}" 
-                                         class="w-8 h-8 rounded-full object-cover">
-                                    <span class="text-sm font-medium">${user.first_name} ${user.last_name}</span>
-                                </div>
-                                <button onclick="addMember(${user.Accounts_id})" 
-                                        class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
-                                    Add
-                                </button>
-                            `;
-                            usersContainer.appendChild(userDiv);
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading users:', error);
-                    usersContainer.innerHTML = '<p class="text-red-500 text-center">Error loading users</p>';
-                });
-            
-            modal.classList.remove('hidden');
-        }
-
-        // Hide add member modal
-        function hideAddMemberModal() {
-            document.getElementById('addMemberModal').classList.add('hidden');
-        }
-
-        // Add member to group
-        function addMember(userId) {
-            fetch(`/group-chat/${groupId}/add-member`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `user_id=${userId}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Member added successfully!');
-                    hideAddMemberModal();
-                    // Reload page to show new member
-                    window.location.reload();
-                } else {
-                    alert('Error adding member: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error adding member:', error);
-                alert('Error adding member');
-            });
-        }
-
-        // Remove member from group
-        function removeMember(userId) {
-            if (confirm('Are you sure you want to remove this member?')) {
-                fetch(`/group-chat/${groupId}/remove-member`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `user_id=${userId}`
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Member removed successfully!');
-                        // Reload page to update member list
-                        window.location.reload();
-                    } else {
-                        alert('Error removing member: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error removing member:', error);
-                    alert('Error removing member');
-                });
+        // Listen for new messages
+        socket.on('new-group-message', (data) => {
+            if (data.group_id == groupId) {
+                addMessageToUI(data);
+                scrollToBottom();
             }
-        }
+        });
 
         // Send message
         messageForm.addEventListener('submit', async (e) => {
@@ -363,12 +265,11 @@
             const messageText = messageInput.value.trim();
             if (!messageText) return;
 
-            // Disable form while sending
-            messageForm.querySelector('button').disabled = true;
-            messageInput.disabled = true;
-
+            console.log('Sending message:', { groupId, messageText });
+            sendButton.disabled = true;
+            
             try {
-                const response = await fetch(`/group-chat/${groupId}/message`, {
+                const response = await fetch('/group-chat/send-message', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
@@ -376,38 +277,299 @@
                     body: `group_id=${groupId}&message_text=${encodeURIComponent(messageText)}`
                 });
 
-                const result = await response.json();
+                const responseData = await response.json();
+                console.log('Response:', responseData);
 
-                if (result.success) {
-                    // Reload page to show new message
-                    window.location.reload();
+                if (response.ok && responseData.success) {
+                    messageInput.value = '';
+                    messageInput.focus();
                 } else {
-                    alert('Error sending message: ' + result.error);
+                    alert('ไม่สามารถส่งข้อความได้: ' + (responseData.error || 'กรุณาลองใหม่'));
                 }
             } catch (error) {
-                console.error('Error sending message:', error);
-                alert('Error sending message');
+                console.error('Error:', error);
+                alert('เกิดข้อผิดพลาด: ' + error.message);
             } finally {
-                // Re-enable form
-                messageForm.querySelector('button').disabled = false;
-                messageInput.disabled = false;
-                messageInput.focus();
+                sendButton.disabled = false;
             }
         });
 
-        // Auto-hide flash messages
-        setTimeout(() => {
-            const flashMessages = document.querySelectorAll('.bg-green-100, .bg-red-100');
-            flashMessages.forEach(msg => {
-                msg.style.transition = 'opacity 0.5s';
-                msg.style.opacity = '0';
-                setTimeout(() => msg.remove(), 500);
+        // Add message to UI
+        function addMessageToUI(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `group-message ${message.sender_id == userId ? 'group-message-sent' : 'group-message-received'}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'group-message-bubble';
+            
+            if (message.sender_id != userId && message.sender_name) {
+                const sender = document.createElement('div');
+                sender.className = 'group-message-sender';
+                sender.textContent = message.sender_name;
+                bubble.appendChild(sender);
+            }
+            
+            const text = document.createElement('div');
+            text.className = 'group-message-text';
+            text.textContent = message.message_text;
+            bubble.appendChild(text);
+            
+            const time = document.createElement('div');
+            time.className = 'group-message-time';
+            time.textContent = new Date(message.created_at).toLocaleTimeString('th-TH', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
             });
-        }, 5000);
+            bubble.appendChild(time);
+            
+            messageDiv.appendChild(bubble);
+            messagesDiv.appendChild(messageDiv);
+        }
+
+        // Toggle members sidebar
+        function toggleMembersSidebar() {
+            membersSidebar.classList.toggle('active');
+        }
+        
+        // Toggle group management menu
+        function toggleGroupManagement() {
+            const menu = document.getElementById('groupManagementMenu');
+            menu.classList.toggle('show');
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('membersSidebar');
+            const membersBtn = document.querySelector('.group-chat-members-btn');
+            const managementMenu = document.getElementById('groupManagementMenu');
+            const managementBtn = document.querySelector('.group-management-btn');
+            
+            if (!sidebar.contains(e.target) && !membersBtn.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+            
+            if (!managementMenu.contains(e.target) && !managementBtn.contains(e.target)) {
+                managementMenu.classList.remove('show');
+            }
+        });
+        
+        // Confirm delete group
+        function confirmDeleteGroup() {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะลบกลุ่มนี้? การดำเนินการนี้ไม่สามารถยกเลิกได้')) {
+                fetch(`/group-chat/${groupId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('ลบกลุ่มสำเร็จแล้ว');
+                        window.location.href = '/group-chat';
+                    } else {
+                        alert('เกิดข้อผิดพลาด: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('เกิดข้อผิดพลาดในการลบกลุ่ม');
+                });
+            }
+        }
+        
+        // Confirm leave group
+        function confirmLeaveGroup() {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะออกจากกลุ่มนี้?')) {
+                fetch(`/group-chat/${groupId}/leave`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('ออกจากกลุ่มสำเร็จแล้ว');
+                        window.location.href = '/group-chat';
+                    } else {
+                        alert('เกิดข้อผิดพลาด: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('เกิดข้อผิดพลาดในการออกจากกลุ่ม');
+                });
+            }
+        }
+        
+        // Show edit modal
+        function showEditModal() {
+            document.getElementById('editModal').style.display = 'flex';
+        }
+        
+        // Close edit modal
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+        
+        // Show invite modal
+        function showInviteModal() {
+            loadInviteMembers();
+            document.getElementById('inviteModal').style.display = 'flex';
+        }
+        
+        // Close invite modal
+        function closeInviteModal() {
+            document.getElementById('inviteModal').style.display = 'none';
+        }
+        
+        // Load invite members
+        async function loadInviteMembers() {
+            try {
+                const response = await fetch(`/group-chat/${groupId}/invite-members`);
+                const data = await response.json();
+                
+                const container = document.getElementById('inviteMembersList');
+                if (data.success && data.members.length > 0) {
+                    container.innerHTML = data.members.map(member => `
+                        <div class="invite-member-item" onclick="toggleMemberSelection(${member.Accounts_id})">
+                            <img src="${member.image || '/images/default-avatar.png'}" 
+                                 alt="${member.first_name}" class="invite-member-avatar">
+                            <div class="invite-member-info">
+                                <div class="invite-member-name">${member.first_name} ${member.last_name}</div>
+                                <div class="invite-member-details">
+                                    อายุ ${member.age} ปี • ${member.faculty_name || 'ไม่ระบุ'} • ${member.majors_name || 'ไม่ระบุ'}
+                                </div>
+                            </div>
+                            <input type="checkbox" class="invite-member-checkbox" id="member-${member.Accounts_id}" 
+                                   value="${member.Accounts_id}" style="display: none;">
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 2rem;">ไม่มีเพื่อนที่แมทแล้วสำหรับเชิญเข้าร่วมกลุ่ม</p>';
+                }
+            } catch (error) {
+                console.error('Error loading invite members:', error);
+                document.getElementById('inviteMembersList').innerHTML = '<p style="text-align: center; color: #dc2626; padding: 2rem;">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
+            }
+        }
+        
+        // Toggle member selection
+        function toggleMemberSelection(memberId) {
+            const item = event.currentTarget;
+            const checkbox = item.querySelector('.invite-member-checkbox');
+            
+            checkbox.checked = !checkbox.checked;
+            item.classList.toggle('selected', checkbox.checked);
+        }
+        
+        // Invite selected members
+        async function inviteSelectedMembers() {
+            const checkboxes = document.querySelectorAll('.invite-member-checkbox:checked');
+            const memberIds = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (memberIds.length === 0) {
+                alert('กรุณาเลือกสมาชิกที่ต้องการเชิญ');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/group-chat/${groupId}/add-members`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        member_ids: memberIds
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('เชิญสมาชิกสำเร็จแล้ว');
+                    closeInviteModal();
+                    location.reload();
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error inviting members:', error);
+                alert('เกิดข้อผิดพลาดในการเชิญสมาชิก');
+            }
+        }
+        
+        // Confirm remove member
+        function confirmRemoveMember(memberId, memberName) {
+            if (confirm(`คุณแน่ใจหรือไม่ที่จะลบ ${memberName} ออกจากกลุ่ม?`)) {
+                fetch(`/group-chat/${groupId}/remove-member`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: memberId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('ลบสมาชิกสำเร็จแล้ว');
+                        location.reload();
+                    } else {
+                        alert('เกิดข้อผิดพลาด: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('เกิดข้อผิดพลาดในการลบสมาชิก');
+                });
+            }
+        }
+
+        // Scroll to bottom
+        function scrollToBottom() {
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        // Handle edit group form
+        document.getElementById('editGroupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const groupName = document.getElementById('editGroupName').value;
+            const description = document.getElementById('editGroupDescription').value;
+            
+            try {
+                const response = await fetch(`/group-chat/${groupId}/edit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        group_name: groupName,
+                        description: description
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('แก้ไขกลุ่มสำเร็จแล้ว');
+                    closeEditModal();
+                    location.reload();
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error updating group:', error);
+                alert('เกิดข้อผิดพลาดในการแก้ไขกลุ่ม');
+            }
+        });
 
         // Initial scroll to bottom
-        scrollToBottom();
+        window.addEventListener('load', () => {
+            scrollToBottom();
+            messageInput.focus();
+        });
     </script>
 </body>
 </html>
-

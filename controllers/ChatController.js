@@ -2,7 +2,7 @@ const Chat = require('../models/ChatModel');
 const Account = require('../models/AccountModel');
 
 const ChatController = {
-  // Show chat list (only matched users)
+  // Show chat list page
   showChatList: async (req, res) => {
     try {
       // Check if user is logged in
@@ -24,14 +24,55 @@ const ChatController = {
       const unreadCount = await Chat.getUnreadCount(account.Accounts_id);
 
       res.render('chat-list', {
-        chatRooms,
-        unreadCount,
+        individualChats: chatRooms || [],
+        unreadCount: unreadCount || 0,
         currentUser: account,
-        title: 'Chat with Matched Roommates'
+        title: 'แชท'
       });
     } catch (error) {
       console.error('Error loading chat list:', error);
       req.flash('error', 'Error loading chat list');
+      res.redirect('/home');
+    }
+  },
+
+  // Show chat summary page (individual + group chats)
+  showChatSummary: async (req, res) => {
+    try {
+      // Check if user is logged in
+      if (!req.session.user) {
+        return res.redirect('/login');
+      }
+
+      // Get user's account
+      const Register_id = req.session.user.Register_id;
+      const account = await Account.findByRegisterId(Register_id);
+      
+      if (!account) {
+        req.flash('error', 'Account not found. Please complete your profile first.');
+        return res.redirect('/accounts');
+      }
+
+      // Get user's chat rooms (only with matched users)
+      const chatRooms = await Chat.getUserChatRooms(account.Accounts_id);
+      const unreadCount = await Chat.getUnreadCount(account.Accounts_id);
+
+      // Get user's group chats
+      const GroupChat = require('../models/GroupChatModel');
+      const userGroups = await GroupChat.getUserGroups(account.Accounts_id);
+      const groupUnreadCount = await GroupChat.getUnreadCount(account.Accounts_id);
+
+      res.render('chat-summary', {
+        individualChats: chatRooms || [],
+        groupChats: userGroups || [],
+        unreadCount,
+        groupUnreadCount,
+        currentUser: account,
+        title: 'แชท'
+      });
+    } catch (error) {
+      console.error('Error loading chat summary:', error);
+      req.flash('error', 'Error loading chat summary');
       res.redirect('/home');
     }
   },
@@ -75,9 +116,10 @@ const ChatController = {
       // Mark messages as read
       await Chat.markMessagesAsRead(parseInt(chat_id), account.Accounts_id);
 
-      res.render('chat-room-simple', {
-        chatRoomInfo,
+      res.render('chat-room', {
+        chatDetails: chatRoomInfo,
         messages: messages || [],
+        userId: account.Accounts_id,
         currentUser: account,
         title: `Chat with ${chatRoomInfo.other_user_name}`
       });
@@ -92,15 +134,18 @@ const ChatController = {
   startChat: async (req, res) => {
     try {
       const { user_id } = req.params;
+      console.log('Starting chat with user:', user_id);
       
       // Validate user_id
       if (!user_id || isNaN(parseInt(user_id))) {
+        console.log('Invalid user ID:', user_id);
         req.flash('error', 'Invalid user ID');
         return res.redirect('/home');
       }
       
       // Check if user is logged in
       if (!req.session.user) {
+        console.log('User not logged in');
         return res.redirect('/login');
       }
 
@@ -109,23 +154,29 @@ const ChatController = {
       const account = await Account.findByRegisterId(Register_id);
       
       if (!account) {
+        console.log('Account not found for Register_id:', Register_id);
         req.flash('error', 'Account not found. Please complete your profile first.');
         return res.redirect('/accounts');
       }
 
       const targetUserId = parseInt(user_id);
       const currentUserId = account.Accounts_id;
+      console.log('Current user ID:', currentUserId, 'Target user ID:', targetUserId);
 
       // Check if users are matched
       const areMatched = await Chat.areUsersMatched(currentUserId, targetUserId);
+      console.log('Are users matched:', areMatched);
       
       if (!areMatched) {
+        console.log('Users are not matched');
         req.flash('error', 'You can only chat with users you have matched with');
         return res.redirect('/home');
       }
 
       // Get or create chat room
+      console.log('Getting or creating chat room...');
       const chatId = await Chat.getOrCreateChatRoom(currentUserId, targetUserId);
+      console.log('Chat room ID:', chatId);
       
       res.redirect(`/chat/${chatId}`);
     } catch (error) {
@@ -139,7 +190,6 @@ const ChatController = {
   sendMessage: async (req, res) => {
     try {
       const { chat_id, message_text } = req.body;
-      
       
       // Check if user is logged in
       if (!req.session.user) {
@@ -170,6 +220,18 @@ const ChatController = {
         message_text.trim()
       );
 
+      // Emit message via Socket.IO
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`chat-${chat_id}`).emit('new-message', {
+          chat_id: parseInt(chat_id),
+          sender_id: account.Accounts_id,
+          sender_name: `${account.first_name} ${account.last_name}`,
+          message_text: message_text.trim(),
+          created_at: new Date().toISOString()
+        });
+      }
+
       res.json({ 
         success: true, 
         message_id: messageId,
@@ -177,7 +239,6 @@ const ChatController = {
       });
     } catch (error) {
       console.error('Error sending message:', error);
-      console.error('Error details:', error.message);
       res.status(500).json({ 
         error: 'Error sending message',
         details: error.message 

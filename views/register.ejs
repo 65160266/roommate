@@ -3,34 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สมัครสมาชิก</title>
-    <link rel="stylesheet" href="/css/login.css">
+    <title>สมัครสมาชิก - RoomMate</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/auth.css">
 </head>
 <body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <!-- Logo -->
+            <div class="auth-logo">
+                <div class="auth-logo-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                    </svg>
+                </div>
+                <h1 class="auth-title">สมัครสมาชิก</h1>
+                <p class="auth-subtitle">เริ่มต้นค้นหาเพื่อนร่วมห้องที่ใช่</p>
+            </div>
 
-    <div class="login-container">
-        <h2>สมัครสมาชิก</h2>
-        <form action="/register" method="POST">
-             <% if (errors.length > 0) { %>
+            <!-- Error Messages -->
+            <% if (errors && errors.length > 0) { %>
                 <% errors.forEach(error => { %>
-                    <p class="alert alert-danger"><%= error %></p>
+                    <div class="error-message">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <%= error %>
+                    </div>
                 <% }) %>
             <% } %>
-            <div class="input-group">
-                <label for="email">อีเมล</label>
-                <input type="email" id="email" name="email" required>
+
+            <!-- Form -->
+            <form action="/register" method="POST" class="auth-form">
+                <div class="form-group">
+                    <label for="email" class="form-label">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
+                        </svg>
+                        อีเมล 
+                    </label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        class="form-input"
+                        placeholder="example@go.buu.ac.th"
+                        pattern="[a-zA-Z0-9._%+-]+@go\.buu\.ac\.th$"
+                        title="กรุณาใช้อีเมล @go.buu.ac.th เท่านั้น"
+                        required
+                    >
+                    <small style="color: #6b7280; font-size: 0.75rem;">เฉพาะอีเมล @go.buu.ac.th เท่านั้น</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        รหัสผ่าน
+                    </label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-input"
+                        placeholder="••••••••"
+                        required
+                    >
+                    <small style="color: #6b7280; font-size: 0.75rem;">รหัสผ่านควรมีอย่างน้อย 6 ตัวอักษร</small>
+                </div>
+
+                <button type="submit" class="auth-button">
+                    สมัครสมาชิก
+                </button>
+            </form>
+
+            <!-- Footer -->
+            <div class="auth-footer">
+                <p style="color: #6b7280;">
+                    มีบัญชีอยู่แล้ว? 
+                    <a href="/login" class="auth-link">เข้าสู่ระบบ</a>
+                </p>
+                <div class="auth-divider">หรือ</div>
+                <a href="/" class="auth-link">กลับหน้าแรก</a>
             </div>
-
-            <div class="input-group">
-                <label for="password">รหัสผ่าน</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-
-            <button type="submit" class="login-btn">sign up</button>
-        </form>
-
-        <p class="register-link"> <a href="/login">เข้าสู่ระบบ</a></p>
+        </div>
     </div>
-
 </body>
 </html>

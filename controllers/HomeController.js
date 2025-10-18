@@ -1,5 +1,6 @@
 const Account = require("../models/AccountModel");
 const HomeModel = require("../models/HomeModel");
+const Match = require("../models/MatchModel");
 
 exports.getHome = async (req, res) => {
   try {
@@ -27,38 +28,78 @@ exports.getHome = async (req, res) => {
       return res.redirect("/accounts");
     }
 
-    // ดึงผู้ใช้ทั้งหมด
-    const accounts = await HomeModel.getAllUsers();
+    // ดึงผู้ใช้ทั้งหมดพร้อมข้อมูลโพสต์
+    const allAccounts = await HomeModel.getAllUsersWithPosts();
     
-    // Get match data
-    const Match = require("../models/MatchModel");
-    let pendingMatches = [];
-    let sentMatches = [];
-    let confirmedMatches = [];
-    let matchStats = { pending_requests: 0, sent_requests: 0, confirmed_matches: 0 };
-
-    try {
-      // Validate that we have a valid Accounts_id
-      if (account.Accounts_id && typeof account.Accounts_id === 'number') {
-        pendingMatches = await Match.getPendingMatches(account.Accounts_id);
-        sentMatches = await Match.getSentMatches(account.Accounts_id);
-        confirmedMatches = await Match.getConfirmedMatches(account.Accounts_id);
-        matchStats = await Match.getMatchStats(account.Accounts_id);
-      } else {
-        console.log("Invalid Accounts_id:", account.Accounts_id);
-      }
-    } catch (matchError) {
-      console.log("Match data error (non-critical):", matchError.message);
-      // Continue with empty arrays - match functionality will still work
+    // Get current user's post data
+    const currentUserPost = allAccounts.find(user => user.Accounts_id === account.Accounts_id);
+    if (currentUserPost) {
+      account.Post_id = currentUserPost.Post_id;
+      account.post_title = currentUserPost.post_title;
+      account.post_content = currentUserPost.post_content;
+      account.post_created_at = currentUserPost.post_created_at;
+      account.room_status = currentUserPost.room_status;
+      account.people_needed = currentUserPost.people_needed;
+      account.room_description = currentUserPost.room_description;
     }
+    
+        // Filter out users without posts and exclude current user
+        let accounts = allAccounts.filter(user => 
+            user.Accounts_id !== account.Accounts_id && 
+            user.post_content && 
+            user.post_content.trim() !== ''
+        );
+    
+    // Get match data to filter out already matched users
+    const Match = require('../models/MatchModel');
+    const Passed = require('../models/PassedModel');
+    const currentUserId = account.Accounts_id;
+    
+    // Get all matches for current user (pending, confirmed, cancelled)
+    const allMatches = await Match.getAllMatchesForUser(currentUserId);
+    console.log('All matches for user:', allMatches);
+    
+    // Filter out only active matches (pending, confirmed) - not cancelled
+    const activeMatches = allMatches.filter(match => 
+      match.status === 'pending' || match.status === 'confirmed'
+    );
+    
+    const matchedUserIds = activeMatches.map(match => 
+      match.requester_id === currentUserId ? match.target_id : match.requester_id
+    );
+    
+    // Get passed users
+    const passedUserIds = await Passed.getPassedUsers(currentUserId);
+    console.log('Passed user IDs:', passedUserIds);
+    
+    console.log('Before filtering - accounts count:', accounts.length);
+    console.log('Active matches:', activeMatches);
+    console.log('Matched user IDs to exclude:', matchedUserIds);
+    console.log('Passed user IDs to exclude:', passedUserIds);
+    
+    // Filter out users that have been matched with (only active matches) and passed users
+    accounts = accounts.filter(user => 
+      !matchedUserIds.includes(user.Accounts_id) && 
+      !passedUserIds.includes(user.Accounts_id)
+    );
+    
+    console.log('After filtering - accounts count:', accounts.length);
+    console.log('Remaining user IDs:', accounts.map(user => user.Accounts_id));
+    
+    // Debug: Show which users were filtered out and why
+    const allUserIds = allAccounts.filter(user => 
+      user.Accounts_id !== account.Accounts_id && 
+      user.post_content && 
+      user.post_content.trim() !== ''
+    ).map(user => user.Accounts_id);
+    
+    const filteredOutUserIds = allUserIds.filter(userId => matchedUserIds.includes(userId));
+    console.log('Users filtered out:', filteredOutUserIds);
+    console.log('Users that should be visible (including cancelled):', accounts.map(user => user.Accounts_id));
 
     res.render("home", { 
       accounts, 
-      userData: account,
-      pendingMatches,
-      sentMatches,
-      confirmedMatches,
-      matchStats
+      userData: account
     });
   } catch (err) {
     console.error("Get home error:", err);
@@ -111,7 +152,6 @@ exports.sendMatchRequest = async (req, res) => {
       return res.redirect('/home');
     }
 
-    const Match = require("../models/MatchModel");
     await Match.create(requesterId, targetId);
     req.flash('success', 'Match request sent successfully!');
     res.redirect('/home');
@@ -122,72 +162,233 @@ exports.sendMatchRequest = async (req, res) => {
   }
 };
 
+// Search users
+exports.searchUsers = async (req, res) => {
+  try {
+    // Check if user is logged in
+    if (!req.session.user) {
+      console.log("No user session found");
+      return res.redirect("/login");
+    }
+
+    const Register_id = req.session.user.Register_id;
+    if (!Register_id) {
+      console.log("No Register_id found in session");
+      return res.redirect("/login");
+    }
+
+    // Get search query
+    const searchQuery = req.query.q;
+    if (!searchQuery || searchQuery.trim() === '') {
+      req.flash('error', 'กรุณาใส่คำค้นหา');
+      return res.redirect('/home');
+    }
+
+    // ข้อมูลของตัวเอง
+    const account = await Account.findByRegisterId(Register_id);
+    if (!account) {
+      console.log("Account not found for Register_id:", Register_id);
+      return res.redirect("/accounts");
+    }
+
+    // Search users
+    const searchResults = await HomeModel.searchUsers(searchQuery, account.Accounts_id);
+    
+    // Get match data to filter out already matched users
+    const Match = require('../models/MatchModel');
+    const Passed = require('../models/PassedModel');
+    
+    const allMatches = await Match.getAllMatches();
+    const activeMatches = allMatches.filter(match => 
+      match.status === 'pending' || match.status === 'accepted'
+    );
+    
+    const matchedUserIds = new Set();
+    activeMatches.forEach(match => {
+      if (match.requester_id === account.Accounts_id) {
+        matchedUserIds.add(match.target_id);
+      } else if (match.target_id === account.Accounts_id) {
+        matchedUserIds.add(match.requester_id);
+      }
+    });
+    
+    const passedUserIds = await Passed.getPassedUserIds(account.Accounts_id);
+    const passedUserIdsSet = new Set(passedUserIds);
+    
+    // Filter out matched and passed users
+    const filteredResults = searchResults.filter(user => 
+      !matchedUserIds.has(user.Accounts_id) && 
+      !passedUserIdsSet.has(user.Accounts_id)
+    );
+
+    console.log('Search query:', searchQuery);
+    console.log('Search results count:', filteredResults.length);
+
+    res.render("search-results", { 
+      accounts: filteredResults, 
+      userData: account,
+      searchQuery: searchQuery
+    });
+  } catch (err) {
+    console.error("Search error:", err);
+    req.flash('error', 'เกิดข้อผิดพลาดในการค้นหา');
+    res.redirect('/home');
+  }
+};
+
+// Send match request
+exports.sendMatchRequest = async (req, res) => {
+  try {
+    const { target_user_id, action } = req.body;
+    
+    // Get user account
+    const Register_id = req.session.user.Register_id;
+    const account = await Account.findByRegisterId(Register_id);
+    
+    if (!account) {
+      return res.json({ success: false, message: 'Account not found' });
+    }
+    
+    const requester_id = account.Accounts_id;
+
+    // Validate input
+    if (!target_user_id || target_user_id == requester_id) {
+      return res.json({ success: false, message: 'Invalid target user' });
+    }
+
+    if (action === 'match') {
+      console.log('Creating match request...');
+      console.log('Requester ID:', requester_id);
+      console.log('Target User ID:', target_user_id);
+      
+      try {
+        console.log('Creating match between:', requester_id, 'and', target_user_id);
+        const matchId = await Match.create(requester_id, target_user_id);
+        console.log('Match created successfully, ID:', matchId);
+        
+        return res.json({ 
+          success: true, 
+          message: 'Match request sent successfully!',
+          matchId: matchId 
+        });
+      } catch (matchError) {
+        console.log('Match creation error:', matchError.message);
+        console.log('Error details:', matchError);
+        if (matchError.message.includes('already exists') || matchError.message.includes('already confirmed')) {
+          return res.json({ 
+            success: true, 
+            message: 'Match request already sent!',
+            matchId: null 
+          });
+        }
+        throw matchError;
+      }
+    } else if (action === 'pass') {
+      console.log('Passing user...');
+      console.log('User ID:', requester_id, 'Passed User ID:', target_user_id);
+      
+      const Passed = require('../models/PassedModel');
+      await Passed.addPassedUser(requester_id, target_user_id);
+      
+      return res.json({ 
+        success: true, 
+        message: 'User passed successfully!' 
+      });
+    } else {
+      return res.json({ success: false, message: 'Invalid action' });
+    }
+  } catch (error) {
+    console.error('Error processing match action:', error);
+    return res.json({ 
+      success: false, 
+      message: error.message || 'Error processing request' 
+    });
+  }
+};
+
+// Show in-progress matches
+exports.showInProgress = async (req, res) => {
+  try {
+    const Register_id = req.session.user.Register_id;
+    const account = await Account.findByRegisterId(Register_id);
+    
+    if (!account) {
+      req.flash('error', 'Account not found');
+      return res.redirect('/home');
+    }
+    
+    const currentUserId = account.Accounts_id;
+    
+    // Get pending matches where current user is the target
+    const pendingMatches = await Match.getPendingMatches(currentUserId);
+    
+    // Get sent matches where current user is the requester
+    const sentMatches = await Match.getSentMatches(currentUserId);
+
+    res.render('in-progress', { 
+      pendingMatches,
+      sentMatches,
+      title: 'In-Progress Matches',
+      currentUser: req.session.user 
+    });
+  } catch (error) {
+    console.error('Error fetching in-progress matches:', error);
+    req.flash('error', 'Error loading matches');
+    res.redirect('/home');
+  }
+};
+
+// Show matched users
+exports.showMatched = async (req, res) => {
+  try {
+    const Register_id = req.session.user.Register_id;
+    const account = await Account.findByRegisterId(Register_id);
+    
+    if (!account) {
+      req.flash('error', 'Account not found');
+      return res.redirect('/home');
+    }
+    
+    const currentUserId = account.Accounts_id;
+    const matchedUsers = await Match.getConfirmedMatches(currentUserId);
+
+    res.render('matched', { 
+      matchedUsers,
+      title: 'Matched Roommates',
+      currentUser: account 
+    });
+  } catch (error) {
+    console.error('Error fetching confirmed matches:', error);
+    req.flash('error', 'Error loading matches');
+    res.redirect('/home');
+  }
+};
+
 // Confirm match
 exports.confirmMatch = async (req, res) => {
   try {
     const { match_id } = req.params;
     
-    // Check if user is logged in
-    if (!req.session.user) {
-      req.flash('error', 'Please log in first.');
-      return res.redirect('/login');
-    }
-
-    // Get the user's account to get the Accounts_id
     const Register_id = req.session.user.Register_id;
     const account = await Account.findByRegisterId(Register_id);
     
     if (!account) {
-      req.flash('error', 'Account not found. Please complete your profile first.');
-      return res.redirect('/accounts');
+      return res.json({ success: false, message: 'Account not found' });
     }
-
+    
     const currentUserId = account.Accounts_id;
-
-    // Validate parameters
-    if (!match_id || !currentUserId) {
-      req.flash('error', 'Invalid match data');
-      return res.redirect('/home');
-    }
-
-    const matchId = parseInt(match_id);
-    const userId = parseInt(currentUserId);
-
-    if (isNaN(matchId) || isNaN(userId)) {
-      req.flash('error', 'Invalid IDs');
-      return res.redirect('/home');
-    }
-
-    const Match = require("../models/MatchModel");
-    const match = await Match.findById(matchId);
-    if (!match || match.target_id !== userId) {
-      req.flash('error', 'Match not found or unauthorized');
-      return res.redirect('/home');
-    }
-
-    if (match.status !== 'pending') {
-      req.flash('error', 'Match is no longer pending');
-      return res.redirect('/home');
-    }
-
-    await Match.updateStatus(matchId, 'confirmed');
+    await Match.updateStatus(match_id, 'confirmed');
     
-    // Create chat room for the confirmed match
-    const Chat = require("../models/ChatModel");
-    try {
-      await Chat.getOrCreateChatRoom(match.requester_id, match.target_id);
-      console.log('Chat room created for match:', matchId);
-    } catch (chatError) {
-      console.error('Error creating chat room:', chatError);
-      // Don't fail the match confirmation if chat room creation fails
-    }
-    
-    req.flash('success', 'Match confirmed successfully! You can now chat with your new roommate.');
-    res.redirect('/home');
+    return res.json({ 
+      success: true, 
+      message: 'Match confirmed successfully!' 
+    });
   } catch (error) {
     console.error('Error confirming match:', error);
-    req.flash('error', 'Error confirming match');
-    res.redirect('/home');
+    return res.json({ 
+      success: false, 
+      message: 'Error confirming match' 
+    });
   }
 };
 
@@ -196,117 +397,27 @@ exports.rejectMatch = async (req, res) => {
   try {
     const { match_id } = req.params;
     
-    // Check if user is logged in
-    if (!req.session.user) {
-      req.flash('error', 'Please log in first.');
-      return res.redirect('/login');
-    }
-
-    // Get the user's account to get the Accounts_id
     const Register_id = req.session.user.Register_id;
     const account = await Account.findByRegisterId(Register_id);
     
     if (!account) {
-      req.flash('error', 'Account not found. Please complete your profile first.');
-      return res.redirect('/accounts');
+      return res.json({ success: false, message: 'Account not found' });
     }
-
+    
     const currentUserId = account.Accounts_id;
-
-    // Validate parameters
-    if (!match_id || !currentUserId) {
-      req.flash('error', 'Invalid match data');
-      return res.redirect('/home');
-    }
-
-    const matchId = parseInt(match_id);
-    const userId = parseInt(currentUserId);
-
-    if (isNaN(matchId) || isNaN(userId)) {
-      req.flash('error', 'Invalid IDs');
-      return res.redirect('/home');
-    }
-
-    const Match = require("../models/MatchModel");
-    const match = await Match.findById(matchId);
-    if (!match || match.target_id !== userId) {
-      req.flash('error', 'Match not found or unauthorized');
-      return res.redirect('/home');
-    }
-
-    if (match.status !== 'pending') {
-      req.flash('error', 'Match is no longer pending');
-      return res.redirect('/home');
-    }
-
-    await Match.updateStatus(matchId, 'rejected');
-    req.flash('success', 'Match request rejected');
-    res.redirect('/home');
+    await Match.updateStatus(match_id, 'rejected');
+    
+    return res.json({ 
+      success: true, 
+      message: 'Match rejected successfully!' 
+    });
   } catch (error) {
     console.error('Error rejecting match:', error);
-    req.flash('error', 'Error rejecting match');
-    res.redirect('/home');
+    return res.json({ 
+      success: false, 
+      message: 'Error rejecting match' 
+    });
   }
 };
-
-// Cancel match
-exports.cancelMatch = async (req, res) => {
-  try {
-    const { match_id } = req.params;
-    
-    // Check if user is logged in
-    if (!req.session.user) {
-      req.flash('error', 'Please log in first.');
-      return res.redirect('/login');
-    }
-
-    // Get the user's account to get the Accounts_id
-    const Register_id = req.session.user.Register_id;
-    const account = await Account.findByRegisterId(Register_id);
-    
-    if (!account) {
-      req.flash('error', 'Account not found. Please complete your profile first.');
-      return res.redirect('/accounts');
-    }
-
-    const currentUserId = account.Accounts_id;
-
-    // Validate parameters
-    if (!match_id || !currentUserId) {
-      req.flash('error', 'Invalid match data');
-      return res.redirect('/home');
-    }
-
-    const matchId = parseInt(match_id);
-    const userId = parseInt(currentUserId);
-
-    if (isNaN(matchId) || isNaN(userId)) {
-      req.flash('error', 'Invalid IDs');
-      return res.redirect('/home');
-    }
-
-    const Match = require("../models/MatchModel");
-    const match = await Match.findById(matchId);
-    if (!match || match.requester_id !== userId) {
-      req.flash('error', 'Match not found or unauthorized');
-      return res.redirect('/home');
-    }
-
-    if (match.status !== 'pending') {
-      req.flash('error', 'Cannot cancel a match that is no longer pending');
-      return res.redirect('/home');
-    }
-
-    await Match.delete(matchId);
-    req.flash('success', 'Match request cancelled');
-    res.redirect('/home');
-  } catch (error) {
-    console.error('Error cancelling match:', error);
-    req.flash('error', 'Error cancelling match');
-    res.redirect('/home');
-  }
-};
-
-
 
 

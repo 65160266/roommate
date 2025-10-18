@@ -9,7 +9,7 @@ services:
     volumes:
       - db-data:/var/lib/mysql
     ports:
-      - "3307:3307"
+      - "3306:3306"
     networks:
       - app_network
 
@@ -51,7 +51,3 @@ volumes:
 networks:
   app_network:
     driver: bridge
-
-
-
-
