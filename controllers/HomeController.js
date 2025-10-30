@@ -1,10 +1,15 @@
+/**
+ * HomeController - จัดการหน้าแรกและการค้นหาผู้ใช้
+ */
+
 const Account = require("../models/AccountModel");
 const HomeModel = require("../models/HomeModel");
 const Match = require("../models/MatchModel");
 
+// แสดงหน้าแรก - แสดงผู้ใช้ทั้งหมดที่มีประกาศ
 exports.getHome = async (req, res) => {
   try {
-    // Check if user is logged in
+    // ตรวจสอบว่าล็อกอินแล้วหรือไม่
     if (!req.session.user) {
       console.log("No user session found");
       return res.redirect("/login");
@@ -96,6 +101,23 @@ exports.getHome = async (req, res) => {
     const filteredOutUserIds = allUserIds.filter(userId => matchedUserIds.includes(userId));
     console.log('Users filtered out:', filteredOutUserIds);
     console.log('Users that should be visible (including cancelled):', accounts.map(user => user.Accounts_id));
+
+    // Check if user is admin
+    const db = require("../config/database");
+    let isAdmin = false;
+    try {
+      const [adminCheck] = await db.execute(`
+        SELECT is_admin FROM Register WHERE Register_id = ? AND is_admin = TRUE
+      `, [Register_id]);
+      isAdmin = adminCheck.length > 0;
+    } catch (err) {
+      console.error('Error checking admin status:', err);
+    }
+
+    // Add isAdmin to session
+    if (isAdmin) {
+      req.session.user.isAdmin = true;
+    }
 
     res.render("home", { 
       accounts, 

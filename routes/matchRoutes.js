@@ -1,9 +1,13 @@
+/**
+ * matchRoutes - เส้นทางสำหรับการจับคู่
+ */
+
 const express = require('express');
 const router = express.Router();
 const MatchController = require('../controllers/MatchController');
 const { hasAccountData } = require('../middleware/authMiddleware');
 
-// Apply authentication middleware to all routes
+// ตรวจสอบข้อมูลผู้ใช้ทุก route
 router.use(hasAccountData);
 
 // GET /match - Show all users that can be matched (redirect to home)

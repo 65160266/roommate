@@ -45,7 +45,11 @@
                                 <div class="group-chat-description"><%= group.description || 'ไม่มีคำอธิบาย' %></div>
                                 <div class="group-chat-meta">
                                     <span class="group-chat-members"><%= group.member_count %> สมาชิก</span>
-                                    <span class="group-chat-role"><%= group.user_role === 'leader' ? 'ผู้นำ' : group.user_role === 'admin' ? 'ผู้ดูแล' : 'สมาชิก' %></span>
+                                    <% if (isAdmin) { %>
+                                        <span class="group-chat-role bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Admin View</span>
+                                    <% } else { %>
+                                        <span class="group-chat-role"><%= group.user_role === 'leader' ? 'ผู้นำ' : group.user_role === 'admin' ? 'ผู้ดูแล' : 'สมาชิก' %></span>
+                                    <% } %>
                                 </div>
                                 <div class="group-chat-last-message">
                                     <%= group.last_message ? group.last_message.substring(0, 60) + (group.last_message.length > 60 ? '...' : '') : 'ยังไม่มีข้อความ' %>

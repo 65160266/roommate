@@ -1,3 +1,9 @@
+<!-- 
+    หน้าแก้ไขโปรไฟล์
+    - แก้ไขข้อมูลส่วนตัว
+    - เปลี่ยนรูปโปรไฟล์
+    - อัปเดตบุคลิกภาพ
+-->
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -71,20 +77,16 @@
                         </div>
                         <div class="form-group">
                             <label for="student_id" class="form-label required">รหัสนักศึกษา</label>
-                            <input type="number" id="student_id" name="student_id" value="<%= userData.student_id %>" class="form-input" placeholder="กรุณากรอกรหัสนักศึกษา" required>
+                            <input type="text" id="student_id" name="student_id" value="<%= userData.student_id %>" class="form-input" placeholder="กรุณากรอกรหัสนักศึกษา (เช่น 65xxxxxxxx)" required maxlength="10">
                         </div>
                         <div class="form-group">
-                            <label for="age" class="form-label required">อายุ</label>
-                            <input type="number" id="age" name="age" value="<%= userData.age %>" class="form-input" placeholder="กรุณากรอกอายุ" required>
+                            <label for="birthdate" class="form-label required">วันเดือนปีเกิด</label>
+                            <input type="date" id="birthdate" name="birthdate" class="form-input" required>
+                            <input type="hidden" id="age" name="age" value="<%= userData.age || '' %>">
                         </div>
                         <div class="form-group">
                             <label for="year" class="form-label required">ปีการศึกษา</label>
-                            <select id="year" name="year" class="form-select">
-                                <option value="1" <%= userData.year == 1 || userData.year === 'ปี1' ? 'selected' : '' %>>ปี1</option>
-                                <option value="2" <%= userData.year == 2 || userData.year === 'ปี2' ? 'selected' : '' %>>ปี2</option>
-                                <option value="3" <%= userData.year == 3 || userData.year === 'ปี3' ? 'selected' : '' %>>ปี3</option>
-                                <option value="4" <%= userData.year == 4 || userData.year === 'ปี4' ? 'selected' : '' %>>ปี4</option>
-                            </select>
+                            <input type="text" id="year" name="year" value="<%= userData.year %>" class="form-input" placeholder="คำนวณจากรหัสนิสิต" readonly style="background-color: #f3f4f6;">
                         </div>
                     </div>
         </div>
@@ -133,25 +135,32 @@
                     </h3>
                     <div class="form-grid-2-col">
                         <div class="form-group">
-                            <label for="faculty_id" class="form-label required">คณะ</label>
-                            <select id="faculty_id" name="faculty_id" class="form-select" required>
-                                <option value="">เลือกคณะ</option>
-                                <option value="1" <%= userData.Faculty_id == 1 ? 'selected' : '' %>>คณะวิศวกรรมศาสตร์</option>
-                                <option value="2" <%= userData.Faculty_id == 2 ? 'selected' : '' %>>คณะวิทยาศาสตร์</option>
-                                <option value="3" <%= userData.Faculty_id == 3 ? 'selected' : '' %>>คณะบริหารธุรกิจ</option>
-                                <option value="4" <%= userData.Faculty_id == 4 ? 'selected' : '' %>>คณะศิลปศาสตร์</option>
-                                <option value="5" <%= userData.Faculty_id == 5 ? 'selected' : '' %>>คณะศึกษาศาสตร์</option>
+                            <label for="Faculty" class="form-label required">คณะ</label>
+                            <select id="Faculty" name="Faculty_id" class="form-select" required>
+                                <option value="" disabled>-- กรุณาเลือกคณะ --</option>
+                                <option value="1" <%= userData.Faculty_id == 1 ? 'selected' : '' %>>ศึกษาศาสตร์</option>
+                                <option value="2" <%= userData.Faculty_id == 2 ? 'selected' : '' %>>วิทยาศาสตร์</option>
+                                <option value="3" <%= userData.Faculty_id == 3 ? 'selected' : '' %>>วิทยาการสารสนเทศ</option>
+                                <option value="4" <%= userData.Faculty_id == 4 ? 'selected' : '' %>>วิศวกรรมศาสตร์</option>
+                                <option value="5" <%= userData.Faculty_id == 5 ? 'selected' : '' %>>คณะโลจิสติกส์</option>
+                                <option value="6" <%= userData.Faculty_id == 6 ? 'selected' : '' %>>คณะบริหารธุรกิจและการจัดการ</option>
+                                <option value="7" <%= userData.Faculty_id == 7 ? 'selected' : '' %>>คณะศิลปกรรมศาสตร์</option>
+                                <option value="8" <%= userData.Faculty_id == 8 ? 'selected' : '' %>>คณะมนุษยศาสตร์และสังคมศาสตร์</option>
+                                <option value="9" <%= userData.Faculty_id == 9 ? 'selected' : '' %>>คณะเภสัชศาสตร์</option>
+                                <option value="10" <%= userData.Faculty_id == 10 ? 'selected' : '' %>>คณะพยาบาลศาสตร์</option>
+                                <option value="11" <%= userData.Faculty_id == 11 ? 'selected' : '' %>>คณะแพทยศาสตร์</option>
+                                <option value="12" <%= userData.Faculty_id == 12 ? 'selected' : '' %>>คณะสหเวชศาสตร์</option>
+                                <option value="13" <%= userData.Faculty_id == 13 ? 'selected' : '' %>>คณะสาธารณสุขศาสตร์</option>
+                                <option value="14" <%= userData.Faculty_id == 14 ? 'selected' : '' %>>คณะวิทยาศาสตร์การกีฬา</option>
+                                <option value="15" <%= userData.Faculty_id == 15 ? 'selected' : '' %>>คณะดนตรีและการแสดง</option>
+                                <option value="16" <%= userData.Faculty_id == 16 ? 'selected' : '' %>>คณะภูมิสารสนเทศศาสตร์</option>
+                                <option value="17" <%= userData.Faculty_id == 17 ? 'selected' : '' %>>วิทยาลัยนานาชาติ</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="majors_id" class="form-label required">สาขา</label>
-                            <select id="majors_id" name="majors_id" class="form-select" required>
-                                <option value="">เลือกสาขา</option>
-                                <option value="1" <%= userData.Majors_id == 1 ? 'selected' : '' %>>วิศวกรรมคอมพิวเตอร์</option>
-                                <option value="2" <%= userData.Majors_id == 2 ? 'selected' : '' %>>วิศวกรรมไฟฟ้า</option>
-                                <option value="3" <%= userData.Majors_id == 3 ? 'selected' : '' %>>วิทยาการคอมพิวเตอร์</option>
-                                <option value="4" <%= userData.Majors_id == 4 ? 'selected' : '' %>>เทคโนโลยีสารสนเทศ</option>
-                                <option value="5" <%= userData.Majors_id == 5 ? 'selected' : '' %>>บริหารธุรกิจ</option>
+                            <label for="Majors" class="form-label required">สาขา</label>
+                            <select id="Majors" name="Majors_id" class="form-select" required>
+                                <option value="" disabled>-- กรุณาเลือกสาขา --</option>
                             </select>
                         </div>
                     </div>
@@ -309,13 +318,148 @@
         // Form validation
         const form = document.querySelector('form');
         form.addEventListener('submit', function(e) {
-          const selectedCount = document.querySelectorAll('.personality-checkbox:checked').length;
-          
-          if (selectedCount > maxSelections) {
+          try {
+            const selectedCount = document.querySelectorAll('.personality-checkbox:checked').length;
+            
+            if (selectedCount > maxSelections) {
+              e.preventDefault();
+              alert('คุณเลือกได้สูงสุด 3 ตัวเลือกเท่านั้น');
+              return false;
+            }
+            
+            // Validate year field
+            const yearInput = document.getElementById('year');
+            if (yearInput && (yearInput.value === 'จบการศึกษาแล้ว' || yearInput.value === 'ยังไม่เข้าศึกษา')) {
+              e.preventDefault();
+              alert('กรุณาตรวจสอบรหัสนิสิตให้ถูกต้อง');
+              document.getElementById('student_id').focus();
+              return false;
+            }
+          } catch (error) {
+            console.error('เกิดข้อผิดพลาดในการตรวจสอบฟอร์ม:', error);
             e.preventDefault();
-            alert('คุณเลือกได้สูงสุด 3 ตัวเลือกเท่านั้น');
+            alert('เกิดข้อผิดพลาดในการตรวจสอบข้อมูล กรุณาลองใหม่อีกครั้ง');
             return false;
           }
+        });
+
+        // Calculate birthdate from age on page load
+        const ageValue = parseInt(document.getElementById('age').value);
+        if (ageValue && ageValue > 0) {
+            const today = new Date();
+            const birthYear = today.getFullYear() - ageValue;
+            const birthdate = new Date(birthYear, today.getMonth(), today.getDate());
+            document.getElementById('birthdate').value = birthdate.toISOString().split('T')[0];
+        }
+
+        // Calculate age from birthdate
+        document.getElementById('birthdate').addEventListener('change', function() {
+            const birthdate = new Date(this.value);
+            const today = new Date();
+            let age = today.getFullYear() - birthdate.getFullYear();
+            const monthDiff = today.getMonth() - birthdate.getMonth();
+            
+            // ถ้ายังไม่ถึงวันเกิดในปีนี้ ให้ลบอายุ 1 ปี
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthdate.getDate())) {
+                age--;
+            }
+            
+            document.getElementById('age').value = age;
+            console.log('Birthdate:', this.value, 'Calculated age:', age);
+        });
+
+        // Calculate year from student ID
+        document.getElementById('student_id').addEventListener('input', function() {
+            const studentId = this.value;
+            const yearInput = document.getElementById('year');
+            
+            try {
+                if (studentId.length >= 2) {
+                    const yearPrefix = studentId.substring(0, 2);
+                    const currentYear = new Date().getFullYear();
+                    const currentYearBE = currentYear + 543; // แปลง ค.ศ. เป็น พ.ศ.
+                    const currentYearPrefix = parseInt(currentYearBE.toString().substring(2, 4)); // เอา 2 หลักหลัง
+                    
+                    // คำนวณปีการศึกษา
+                    // ปีปัจจุบัน 2568 (68) - รหัสนิสิต 65 = 3 ปี → ปี 4
+                    // ปีปัจจุบัน 2568 (68) - รหัสนิสิต 66 = 2 ปี → ปี 3
+                    // ปีปัจจุบัน 2568 (68) - รหัสนิสิต 67 = 1 ปี → ปี 2
+                    // ปีปัจจุบัน 2568 (68) - รหัสนิสิต 68 = 0 ปี → ปี 1
+                    const yearDiff = currentYearPrefix - parseInt(yearPrefix);
+                    let academicYear = yearDiff + 1;
+                    
+                    // รองรับทุกปีการศึกษา
+                    if (academicYear > 4) {
+                        yearInput.value = 'จบการศึกษาแล้ว';
+                    } else if (academicYear < 1) {
+                        yearInput.value = 'ยังไม่เข้าศึกษา';
+                    } else {
+                        yearInput.value = academicYear;
+                    }
+                    
+                    console.log('Student ID:', studentId, 'Year Prefix:', yearPrefix, 'Current Year Prefix:', currentYearPrefix, 'Year Diff:', yearDiff, 'Academic Year:', academicYear);
+                } else {
+                    yearInput.value = '';
+                }
+            } catch (error) {
+                console.error('เกิดข้อผิดพลาดในการคำนวณปีการศึกษา:', error);
+                yearInput.value = '';
+                alert('เกิดข้อผิดพลาดในการคำนวณปีการศึกษา กรุณาตรวจสอบรหัสนิสิต');
+            }
+        });
+
+        // Faculty change - load majors
+        const facultySelect = document.getElementById('Faculty');
+        const majorsSelect = document.getElementById('Majors');
+        const currentMajorId = <%= userData.Majors_id || 'null' %>;
+        let majorsLoaded = false;
+        
+        async function loadMajors(facultyId, selectMajorId = null) {
+          majorsSelect.innerHTML = '<option value="" disabled>-- กรุณาเลือกสาขา --</option>';
+          
+          if (facultyId) {
+            try {
+              console.log('Loading majors for faculty:', facultyId);
+              const response = await fetch(`/api/majors/${facultyId}`);
+              console.log('Response status:', response.status);
+              
+              const majors = await response.json();
+              console.log('Majors received:', majors);
+              
+              if (majors.error) {
+                console.error('API Error:', majors.error, majors.details);
+                alert('ไม่สามารถโหลดข้อมูลสาขาได้: ' + (majors.details || majors.error));
+                return;
+              }
+              
+              majors.forEach(major => {
+                const option = document.createElement('option');
+                option.value = major.Majors_id;
+                option.textContent = major.majors_name;
+                if (selectMajorId && major.Majors_id == selectMajorId) {
+                  option.selected = true;
+                }
+                majorsSelect.appendChild(option);
+              });
+              
+              console.log('Loaded', majors.length, 'majors');
+              majorsLoaded = true;
+            } catch (error) {
+              console.error('Error loading majors:', error);
+              alert('ไม่สามารถโหลดข้อมูลสาขาได้: ' + error.message);
+            }
+          }
+        }
+        
+        // Load majors on page load (only once)
+        const currentFacultyId = facultySelect.value;
+        if (currentFacultyId && !majorsLoaded) {
+          loadMajors(currentFacultyId, currentMajorId);
+        }
+        
+        // Load majors when faculty changes
+        facultySelect.addEventListener('change', function() {
+          loadMajors(this.value);
         });
       });
     </script>

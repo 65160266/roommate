@@ -1,8 +1,12 @@
+/**
+ * ChatController - จัดการแชทส่วนตัว (1:1)
+ */
+
 const Chat = require('../models/ChatModel');
 const Account = require('../models/AccountModel');
 
 const ChatController = {
-  // Show chat list page
+  // แสดงรายการแชท
   showChatList: async (req, res) => {
     try {
       // Check if user is logged in
@@ -77,7 +81,7 @@ const ChatController = {
     }
   },
 
-  // Show specific chat room
+  // แสดงห้องแชท
   showChatRoom: async (req, res) => {
     try {
       const { chat_id } = req.params;
@@ -130,7 +134,7 @@ const ChatController = {
     }
   },
 
-  // Start chat with a matched user
+  // เริ่มแชทกับผู้ใช้ที่จับคู่แล้ว
   startChat: async (req, res) => {
     try {
       const { user_id } = req.params;
@@ -186,7 +190,7 @@ const ChatController = {
     }
   },
 
-  // Send message (API endpoint)
+  // ส่งข้อความ (API)
   sendMessage: async (req, res) => {
     try {
       const { chat_id, message_text } = req.body;

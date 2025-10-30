@@ -1,12 +1,29 @@
+/**
+ * authRoutes - เส้นทางสำหรับการเข้าสู่ระบบและลงทะเบียน
+ */
+
 const express = require("express");
 const router = express.Router();
 const {isAuthenticated} = require("../middleware/authMiddleware");
 const AuthController = require("../controllers/AuthController");
 
-// Root route - show index page or redirect based on account status
+// หน้าแรก - ตรวจสอบสถานะและ redirect
 router.get("/", async (req, res) => {
   if (req.session && req.session.user) {
     try {
+      const db = require("../config/database");
+      
+      // ตรวจสอบว่าเป็นแอดมินหรือไม่
+      const [adminCheck] = await db.execute(`
+        SELECT is_admin FROM Register WHERE Register_id = ? AND is_admin = TRUE
+      `, [req.session.user.Register_id]);
+      
+      // ถ้าเป็นแอดมิน → redirect ไปหน้า admin
+      if (adminCheck.length > 0) {
+        req.session.user.isAdmin = true;
+        return res.redirect("/admin");
+      }
+      
       const Account = require("../models/AccountModel");
       const rows = await Account.queryaccount(req.session.user.Register_id);
       

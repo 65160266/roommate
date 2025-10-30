@@ -1,8 +1,12 @@
+/**
+ * PostModel - จัดการประกาศในฐานข้อมูล
+ */
+
 const pool = require("../config/database");
 const cloudinary = require("../config/cloudinary");
 
 class PostModel {
-  // หาข้อมูลโพสต์ของ user จากตาราง Post
+  // ดึงประกาศของผู้ใช้
   static async getPostByUser(Register_id) {
     const [rows] = await pool.execute(
       `SELECT 

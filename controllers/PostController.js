@@ -1,6 +1,11 @@
+/**
+ * PostController - จัดการประกาศหาเพื่อนร่วมห้อง
+ */
+
 const PostModel = require("../models/PostModel");
 const Account = require("../models/AccountModel");
 
+// แสดงประกาศของฉัน
 exports.showMyPost = async (req, res) => {
   try {
     const Register_id = req.session.user?.Register_id;
@@ -17,6 +22,7 @@ exports.showMyPost = async (req, res) => {
   }
 };
 
+// แสดงฟอร์มสร้างประกาศ
 exports.showCreatePost = async (req, res) => {
   try {
     const Register_id = req.session.user?.Register_id;

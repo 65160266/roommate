@@ -20,6 +20,10 @@
     padding: 1.5rem 2rem;
     background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    flex-shrink: 0;
 }
 
 .group-chat-header-info {
@@ -112,6 +116,8 @@
     display: flex;
     flex: 1;
     position: relative;
+    overflow: hidden;
+    min-height: 0;
 }
 
 .group-messages-container {
@@ -122,6 +128,8 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    min-height: 0;
+    max-height: 100%;
 }
 
 .group-message {
@@ -443,6 +451,10 @@
     padding: 1.5rem 2rem;
     background: white;
     border-top: 1px solid #e2e8f0;
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    flex-shrink: 0;
 }
 
 .group-chat-input-form {

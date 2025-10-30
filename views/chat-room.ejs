@@ -1,3 +1,8 @@
+<!-- 
+    หน้าแชทส่วนตัว (1:1)
+    - แชทกับผู้ใช้ที่จับคู่แล้ว
+    - ส่งข้อความแบบ real-time
+-->
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -12,7 +17,7 @@
 <body class="home-container">
     <%- include('partials/homeheader') %>
     <div class="chat-room-container">
-        <!-- Chat Header -->
+        <!-- ส่วนหัวแชท -->
         <div class="chat-header">
             <div class="chat-header-info">
                 <a href="/chat" class="chat-header-back">
@@ -25,7 +30,6 @@
                      class="chat-header-avatar">
                 <div class="chat-header-details">
                     <div class="chat-header-name"><%= chatDetails.other_user_name %></div>
-                    <div class="chat-header-status">● ออนไลน์</div>
                 </div>
             </div>
         </div>

@@ -1,0 +1,326 @@
+<!-- 
+    หน้าจัดการกลุ่มแชท (Admin)
+    - แสดงรายการกลุ่มทั้งหมด
+    - ค้นหาและกรองกลุ่ม
+    - ดูรายละเอียด/เข้าแชท/ลบกลุ่ม
+-->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .admin-sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="admin-sidebar w-64 text-white">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold mb-8">
+                    <i class="fas fa-shield-alt mr-2"></i>
+                    Admin Panel
+                </h2>
+                <nav class="space-y-2">
+                    <a href="/admin" class="flex items-center px-4 py-3 rounded-lg hover:bg-white hover:bg-opacity-20 text-white">
+                        <i class="fas fa-tachometer-alt mr-3"></i>
+                        Dashboard
+                    </a>
+                    <a href="/admin/users" class="flex items-center px-4 py-3 rounded-lg hover:bg-white hover:bg-opacity-20 text-white">
+                        <i class="fas fa-users mr-3"></i>
+                        User Management
+                    </a>
+                    <a href="/admin/groups" class="flex items-center px-4 py-3 rounded-lg bg-white bg-opacity-20 text-white">
+                        <i class="fas fa-comments mr-3"></i>
+                        Group Management
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-y-auto">
+            <!-- Header -->
+            <div class="bg-white shadow-sm border-b">
+                <div class="px-6 py-4 flex justify-between items-center">
+                    <h1 class="text-2xl font-bold text-gray-800">
+                        <i class="fas fa-comments mr-2 text-purple-600"></i>
+                        Group Management
+                    </h1>
+                    <div class="flex items-center space-x-4">
+                        <a href="/admin" class="text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-arrow-left mr-1"></i>
+                            Back to Dashboard
+                        </a>
+                        <span class="text-gray-400">|</span>
+                        <span class="text-gray-600">
+                            <i class="fas fa-user-shield mr-1"></i>
+                            <%= session.user.email %>
+                        </span>
+                        <a href="/logout" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors">
+                            <i class="fas fa-sign-out-alt mr-1"></i>
+                            Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flash Messages -->
+            <% if (typeof flashMessages !== 'undefined' && flashMessages.error && flashMessages.error.length > 0) { %>
+                <div class="flash-message bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mx-6 mt-4 relative">
+                    <button onclick="this.parentElement.style.display='none'" class="absolute top-2 right-2 text-red-700 hover:text-red-900">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <%= flashMessages.error %>
+                </div>
+            <% } %>
+            <% if (typeof flashMessages !== 'undefined' && flashMessages.success && flashMessages.success.length > 0) { %>
+                <div class="flash-message bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mx-6 mt-4 relative">
+                    <button onclick="this.parentElement.style.display='none'" class="absolute top-2 right-2 text-green-700 hover:text-green-900">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <%= flashMessages.success %>
+                </div>
+            <% } %>
+
+            <!-- Content -->
+            <div class="p-6">
+                <!-- Stats Card -->
+                <div class="bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl shadow-lg p-6 mb-6 text-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-purple-100 text-sm mb-1">จำนวนกลุ่มทั้งหมด</p>
+                            <h3 class="text-3xl font-bold"><%= groups ? groups.length : 0 %> กลุ่ม</h3>
+                        </div>
+                        <div class="bg-white bg-opacity-20 rounded-full p-4">
+                            <i class="fas fa-comments text-4xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search and Filter -->
+                <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <div class="flex-1">
+                            <div class="relative">
+                                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                <input type="text" 
+                                       id="searchInput"
+                                       placeholder="ค้นหากลุ่ม (ชื่อกลุ่ม, ผู้สร้าง, คำอธิบาย)..." 
+                                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <select id="memberFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                <option value="">ทุกขนาด</option>
+                                <option value="small">น้อยกว่า 5 คน</option>
+                                <option value="medium">5-10 คน</option>
+                                <option value="large">มากกว่า 10 คน</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Groups Table -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Group
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Creator
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Members
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Created
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Status
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <% if (groups && groups.length > 0) { %>
+                                    <% groups.forEach(group => { %>
+                                        <tr class="hover:bg-purple-50 transition-colors duration-150">
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+                                                        <i class="fas fa-comments text-white"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-sm font-medium text-gray-900">
+                                                            <%= group.group_name %>
+                                                        </div>
+                                                        <div class="text-sm text-gray-500">
+                                                            <%= group.description || 'No description' %>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-900"><%= group.first_name %> <%= group.last_name %></div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                    <%= group.member_count %> members
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <%= new Date(group.created_at).toLocaleDateString() %>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                    Active
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <div class="flex space-x-2">
+                                                    <a href="/admin/groups/<%= group.group_id %>" 
+                                                       class="inline-flex items-center px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                                                       title="ดูรายละเอียด">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="/group-chat/<%= group.group_id %>" 
+                                                       class="inline-flex items-center px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                                                       title="เข้าแชท">
+                                                        <i class="fas fa-comments"></i>
+                                                    </a>
+                                                    <button onclick="deleteGroup(<%= group.group_id %>)" 
+                                                            class="inline-flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                                                            title="ลบกลุ่ม">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                            No groups found
+                                        </td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function joinGroup(groupId) {
+            if (confirm('เข้าร่วมกลุ่มนี้ในฐานะแอดมิน?')) {
+                fetch(`/admin/groups/${groupId}/join`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('เกิดข้อผิดพลาดในการเข้าร่วมกลุ่ม');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('เกิดข้อผิดพลาดในการเข้าร่วมกลุ่ม');
+                });
+            }
+        }
+
+        function leaveGroup(groupId) {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะออกจากกลุ่มนี้?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/admin/groups/${groupId}/leave`;
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        function deleteGroup(groupId) {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะลบกลุ่มนี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/admin/groups/${groupId}/delete`;
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        // Search and Filter functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const memberFilter = document.getElementById('memberFilter');
+            const tableRows = document.querySelectorAll('tbody tr');
+
+            function filterTable() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const selectedFilter = memberFilter.value;
+
+                tableRows.forEach(row => {
+                    // Skip "No groups found" row
+                    if (row.querySelector('td[colspan]')) return;
+
+                    const text = row.textContent.toLowerCase();
+                    const memberCountText = row.querySelector('td:nth-child(3)').textContent;
+                    const memberCount = parseInt(memberCountText.match(/\d+/)[0]);
+
+                    const matchesSearch = text.includes(searchTerm);
+                    let matchesFilter = true;
+
+                    if (selectedFilter === 'small') {
+                        matchesFilter = memberCount < 5;
+                    } else if (selectedFilter === 'medium') {
+                        matchesFilter = memberCount >= 5 && memberCount <= 10;
+                    } else if (selectedFilter === 'large') {
+                        matchesFilter = memberCount > 10;
+                    }
+
+                    if (matchesSearch && matchesFilter) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            searchInput.addEventListener('input', filterTable);
+            memberFilter.addEventListener('change', filterTable);
+
+            // Auto-hide flash messages after 5 seconds
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(function(message) {
+                setTimeout(function() {
+                    message.style.transition = 'opacity 0.5s';
+                    message.style.opacity = '0';
+                    setTimeout(function() {
+                        message.style.display = 'none';
+                    }, 500);
+                }, 5000);
+            });
+        });
+    </script>
+</body>
+</html>

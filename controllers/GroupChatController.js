@@ -1,6 +1,12 @@
+/**
+ * GroupChatController - จัดการแชทกลุ่ม
+ */
+
 const GroupChatModel = require('../models/GroupChatModel');
 const MatchModel = require('../models/MatchModel');
+const db = require('../config/database');
 
+// แสดงรายการกลุ่มแชท
 exports.showGroupChatList = async (req, res) => {
     try {
         const Register_id = req.session.user?.Register_id;
@@ -13,11 +19,31 @@ exports.showGroupChatList = async (req, res) => {
             return res.redirect('/accounts');
         }
 
-        const groupChats = await GroupChatModel.getUserGroups(account.Accounts_id);
+        // Check if user is admin
+        const isAdmin = req.session.user?.isAdmin || false;
+        let groupChats = [];
+
+        if (isAdmin) {
+            // Admin can see all groups
+            const [allGroups] = await db.execute(`
+                SELECT gc.*, a.first_name, a.last_name, 
+                       COUNT(gcm.Accounts_id) as member_count
+                FROM GroupChats gc 
+                JOIN Accounts a ON gc.created_by = a.Accounts_id 
+                LEFT JOIN GroupChatMembers gcm ON gc.GroupChat_id = gcm.GroupChat_id
+                GROUP BY gc.GroupChat_id
+                ORDER BY gc.created_at DESC
+            `);
+            groupChats = allGroups;
+        } else {
+            // Regular user sees only their groups
+            groupChats = await GroupChatModel.getUserGroups(account.Accounts_id);
+        }
         
         res.render('group-chat-list', {
             groupChats: groupChats || [],
-            unreadCount: 0
+            unreadCount: 0,
+            isAdmin: isAdmin
         });
     } catch (error) {
         console.error('Error loading group chat list:', error);
@@ -123,9 +149,23 @@ exports.showGroupChatRoom = async (req, res) => {
 
         const { group_id } = req.params;
         
+        // Check if user is admin
+        const isAdmin = req.session.user?.isAdmin || false;
+        
         // Check if user is member of group
         const isMember = await GroupChatModel.isUserMember(group_id, account.Accounts_id);
-        if (!isMember) {
+        
+        // If not a member and is admin, auto-join the group
+        if (!isMember && isAdmin) {
+            console.log('Admin auto-joining group:', group_id);
+            try {
+                await GroupChatModel.addAdminToGroup(group_id, account.Accounts_id);
+                console.log('Admin successfully joined group');
+            } catch (joinError) {
+                console.error('Error auto-joining admin to group:', joinError);
+            }
+        } else if (!isMember && !isAdmin) {
+            // Regular user without membership
             req.flash('error', 'คุณไม่มีสิทธิ์เข้าถึงกลุ่มนี้');
             return res.redirect('/group-chat');
         }

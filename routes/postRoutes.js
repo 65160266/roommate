@@ -1,9 +1,13 @@
+/**
+ * postRoutes - เส้นทางสำหรับจัดการประกาศ
+ */
+
 const express = require("express");
 const router = express.Router();
 const PostController = require("../controllers/PostController");
 const { isAuthenticated, hasAccountData } = require("../middleware/authMiddleware");
 
-// Apply authentication middleware
+// ตรวจสอบการเข้าสู่ระบบทุก route
 router.use(isAuthenticated);
 
 router.get("/post", hasAccountData, PostController.showMyPost);        

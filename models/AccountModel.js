@@ -1,10 +1,13 @@
+/**
+ * AccountModel - จัดการข้อมูลผู้ใช้ในฐานข้อมูล
+ */
+
 const pool = require("../config/database");
 const cloudinary = require("../config/cloudinary");
 
-
 const Account = {
 
-  // ดึงข้อมูลโปรไฟล์จาก Register_id
+  // ดึงข้อมูลผู้ใช้จาก Register_id
   findByRegisterId: async (Register_id) => {
     const [rows] = await pool.execute(
       `SELECT 
@@ -13,8 +16,8 @@ const Account = {
         m.majors_name,
         GROUP_CONCAT(p.description SEPARATOR ', ') AS Personalitiy
       FROM Accounts a
-      LEFT JOIN Faculty f ON a.Faculty_id = f.faculty_id
-      LEFT JOIN Majors m ON a.Majors_id = m.majors_id
+      LEFT JOIN Faculty f ON a.Faculty_id = f.Faculty_id
+      LEFT JOIN Majors m ON a.Majors_id = m.Majors_id
       LEFT JOIN Accounts_has_Personality ap ON a.Accounts_id = ap.Accounts_id
       LEFT JOIN Personality p ON ap.Personality_id = p.Personality_id
       WHERE a.Register_id = ?

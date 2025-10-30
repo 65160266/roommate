@@ -1,9 +1,13 @@
+/**
+ * groupChatRoutes - เส้นทางสำหรับแชทกลุ่ม
+ */
+
 const express = require('express');
 const router = express.Router();
 const GroupChatController = require('../controllers/GroupChatController');
 const { isAuthenticated, hasAccountData } = require('../middleware/authMiddleware');
 
-// Apply authentication middleware to all routes
+// ตรวจสอบการเข้าสู่ระบบและข้อมูลผู้ใช้ทุก route
 router.use(isAuthenticated);
 router.use(hasAccountData);
 

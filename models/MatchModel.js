@@ -1,7 +1,11 @@
+/**
+ * MatchModel - จัดการการจับคู่ในฐานข้อมูล
+ */
+
 const pool = require("../config/database");
 
 const Match = {
-  // Create a new match request
+  // สร้างคำขอจับคู่ใหม่
   create: async (requester_id, target_id) => {
     try {
       

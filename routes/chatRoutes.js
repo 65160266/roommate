@@ -1,9 +1,13 @@
+/**
+ * chatRoutes - เส้นทางสำหรับแชทส่วนตัว
+ */
+
 const express = require('express');
 const router = express.Router();
 const ChatController = require('../controllers/ChatController');
 const { isAuthenticated, hasAccountData } = require('../middleware/authMiddleware');
 
-// Apply authentication middleware to all routes
+// ตรวจสอบการเข้าสู่ระบบและข้อมูลผู้ใช้ทุก route
 router.use(isAuthenticated);
 router.use(hasAccountData);
 

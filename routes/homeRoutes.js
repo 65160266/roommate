@@ -1,10 +1,13 @@
-// routes/homeRoutes.js
+/**
+ * homeRoutes - เส้นทางสำหรับหน้าแรกและการค้นหา
+ */
+
 const express = require("express");
 const router = express.Router();
 const HomeController = require("../controllers/HomeController");
 const { isAuthenticated, hasAccountData } = require("../middleware/authMiddleware");
 
-// Apply authentication middleware
+// ตรวจสอบการเข้าสู่ระบบทุก route
 router.use(isAuthenticated);
 
 router.get("/home", hasAccountData, HomeController.getHome);

@@ -1,7 +1,11 @@
+/**
+ * GroupChatModel - จัดการแชทกลุ่มในฐานข้อมูล
+ */
+
 const pool = require("../config/database");
 
 const GroupChat = {
-  // Create a new group chat
+  // สร้างกลุ่มแชทใหม่
   createGroup: async (group_name, description, created_by) => {
     try {
       const [result] = await pool.execute(
@@ -587,6 +591,45 @@ const GroupChat = {
       
       return rows.length > 0;
     } catch (error) {
+      throw error;
+    }
+  },
+
+  // Add admin to group (auto-join)
+  addAdminToGroup: async (group_id, user_id) => {
+    try {
+      const groupId = parseInt(group_id);
+      const userId = parseInt(user_id);
+      
+      // Check if already a member (including inactive)
+      const [existing] = await pool.execute(
+        `SELECT member_id, is_active FROM Group_Members 
+         WHERE group_id = ? AND user_id = ?`,
+        [groupId, userId]
+      );
+      
+      if (existing.length > 0) {
+        // Reactivate if inactive
+        if (!existing[0].is_active) {
+          await pool.execute(
+            `UPDATE Group_Members SET is_active = TRUE, joined_at = NOW() 
+             WHERE member_id = ?`,
+            [existing[0].member_id]
+          );
+        }
+        return true;
+      }
+      
+      // Add as new member
+      await pool.execute(
+        `INSERT INTO Group_Members (group_id, user_id, role, is_active, joined_at) 
+         VALUES (?, ?, 'admin', TRUE, NOW())`,
+        [groupId, userId]
+      );
+      
+      return true;
+    } catch (error) {
+      console.error('Error adding admin to group:', error);
       throw error;
     }
   },

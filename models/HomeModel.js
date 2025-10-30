@@ -1,7 +1,12 @@
+/**
+ * HomeModel - จัดการข้อมูลหน้าแรกในฐานข้อมูล
+ */
+
 const pool = require("../config/database");
 const cloudinary = require("../config/cloudinary");
 
 class HomeModel {
+  // ดึงข้อมูลผู้ใช้ทั้งหมด
   static async getAllUsers() {
     const [rows] = await pool.execute(
       `SELECT 

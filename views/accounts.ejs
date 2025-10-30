@@ -1,3 +1,9 @@
+<!-- 
+    หน้ากรอกข้อมูลผู้ใช้ครั้งแรก
+    - กรอกข้อมูลส่วนตัว (ชื่อ, อายุ, คณะ, สาขา)
+    - อัปโหลดรูปโปรไฟล์
+    - เลือกบุคลิกภาพ
+-->
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -38,9 +44,9 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
                             </svg>
                         </div>
-                        <input type="file" id="imageInput" name="image" class="profile-image-input" accept="image/*">
+                        <input type="file" id="imageInput" name="image" class="profile-image-input" accept="image/*" required>
                     </div>
-                    <p class="profile-image-label">คลิกเพื่ออัปโหลดรูปโปรไฟล์</p>
+                    <p class="profile-image-label">คลิกเพื่ออัปโหลดรูปโปรไฟล์ <span style="color: #ef4444;">*</span></p>
                 </div>
 
                 <!-- Personal Information Section -->
@@ -66,20 +72,16 @@
                         </div>
                         <div class="form-group">
                             <label for="student_id" class="form-label required">รหัสนักศึกษา</label>
-                            <input type="number" id="student_id" name="student_id" class="form-input" placeholder="กรุณากรอกรหัสนักศึกษา" required>
+                            <input type="text" id="student_id" name="student_id" class="form-input" placeholder="กรุณากรอกรหัสนักศึกษา (เช่น 65xxxxxxxx)" required maxlength="10">
                         </div>
                         <div class="form-group">
-                            <label for="age" class="form-label required">อายุ</label>
-                            <input type="number" id="age" name="age" class="form-input" placeholder="กรุณากรอกอายุ" required>
+                            <label for="birthdate" class="form-label required">วันเดือนปีเกิด</label>
+                            <input type="date" id="birthdate" name="birthdate" class="form-input" required>
+                            <input type="hidden" id="age" name="age">
                         </div>
                         <div class="form-group">
                             <label for="year" class="form-label required">ปีการศึกษา</label>
-                            <select id="year" name="year" class="form-select">
-                                <option value="1" selected>ปี1</option>
-                                <option value="2">ปี2</option>
-                                <option value="3">ปี3</option>
-                                <option value="4">ปี4</option>
-                            </select>
+                            <input type="text" id="year" name="year" class="form-input" placeholder="คำนวณจากรหัสนิสิต" readonly style="background-color: #f3f4f6;">
                         </div>
                     </div>
                 </div>
@@ -101,7 +103,7 @@
                             <select id="gender" name="gender" class="form-select">
                                 <option value="ชาย" selected>ชาย</option>
                                 <option value="หญิง">หญิง</option>
-                                <option value="LGBTQ">LGBTQ+</option>
+                                <option value="LGBTQ">LGBTQ</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -453,14 +455,147 @@
 
     // Form validation before submit
     document.querySelector('form').addEventListener('submit', function(e) {
-        const checkedBoxes = document.querySelectorAll('.personality-checkbox:checked');
-        console.log('Form submitting with personality selections:', Array.from(checkedBoxes).map(cb => cb.value));
-        
-        // Optional: Add client-side validation
-        if (checkedBoxes.length > 3) {
+        try {
+            // Validate image upload
+            const imageInput = document.getElementById('imageInput');
+            if (!imageInput.files || imageInput.files.length === 0) {
+                e.preventDefault();
+                alert('กรุณาอัปโหลดรูปโปรไฟล์');
+                imageInput.focus();
+                return false;
+            }
+            
+            const checkedBoxes = document.querySelectorAll('.personality-checkbox:checked');
+            console.log('Form submitting with personality selections:', Array.from(checkedBoxes).map(cb => cb.value));
+            
+            // Validate personality selections
+            if (checkedBoxes.length > 3) {
+                e.preventDefault();
+                alert('คุณสามารถเลือกได้สูงสุด 3 ตัวเลือกเท่านั้น');
+                return false;
+            }
+            
+            // Validate required fields
+            const requiredFields = ['first_name', 'last_name', 'nickname', 'birthdate', 'phone', 'gender', 'student_id', 'Faculty', 'Majors', 'year', 'status'];
+            for (const fieldName of requiredFields) {
+                const field = document.querySelector(`[name="${fieldName}"]`);
+                if (field && !field.value) {
+                    e.preventDefault();
+                    alert(`กรุณากรอกข้อมูล: ${field.placeholder || fieldName}`);
+                    field.focus();
+                    return false;
+                }
+            }
+            
+            // Validate year field
+            const yearInput = document.getElementById('year');
+            if (yearInput.value === 'จบการศึกษาแล้ว' || yearInput.value === 'ยังไม่เข้าศึกษา') {
+                e.preventDefault();
+                alert('กรุณาตรวจสอบรหัสนิสิตให้ถูกต้อง');
+                document.getElementById('student_id').focus();
+                return false;
+            }
+        } catch (error) {
+            console.error('เกิดข้อผิดพลาดในการตรวจสอบฟอร์ม:', error);
             e.preventDefault();
-            alert('คุณสามารถเลือกได้สูงสุด 3 ตัวเลือกเท่านั้น');
+            alert('เกิดข้อผิดพลาดในการตรวจสอบข้อมูล กรุณาลองใหม่อีกครั้ง');
             return false;
+        }
+    });
+
+    // Calculate age from birthdate
+    document.getElementById('birthdate').addEventListener('change', function() {
+        const birthdate = new Date(this.value);
+        const today = new Date();
+        let age = today.getFullYear() - birthdate.getFullYear();
+        const monthDiff = today.getMonth() - birthdate.getMonth();
+        
+        // ถ้ายังไม่ถึงวันเกิดในปีนี้ ให้ลบอายุ 1 ปี
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthdate.getDate())) {
+            age--;
+        }
+        
+        document.getElementById('age').value = age;
+        console.log('Birthdate:', this.value, 'Calculated age:', age);
+    });
+
+    // Calculate year from student ID
+    document.getElementById('student_id').addEventListener('input', function() {
+        const studentId = this.value;
+        const yearInput = document.getElementById('year');
+        
+        try {
+            if (studentId.length >= 2) {
+                const yearPrefix = studentId.substring(0, 2);
+                const currentYear = new Date().getFullYear();
+                const currentYearBE = currentYear + 543; // แปลง ค.ศ. เป็น พ.ศ.
+                const currentYearPrefix = parseInt(currentYearBE.toString().substring(2, 4)); // เอา 2 หลักหลัง
+                
+                // คำนวณปีการศึกษา
+                // ปีปัจจุบัน 2568 (68) - รหัสนิสิต 65 = 3 ปี → ปี 4
+                // ปีปัจจุบัน 2568 (68) - รหัสนิสิต 66 = 2 ปี → ปี 3
+                // ปีปัจจุบัน 2568 (68) - รหัสนิสิต 67 = 1 ปี → ปี 2
+                // ปีปัจจุบัน 2568 (68) - รหัสนิสิต 68 = 0 ปี → ปี 1
+                const yearDiff = currentYearPrefix - parseInt(yearPrefix);
+                let academicYear = yearDiff + 1;
+                
+                // รองรับทุกปีการศึกษา
+                if (academicYear > 4) {
+                    yearInput.value = 'จบการศึกษาแล้ว';
+                } else if (academicYear < 1) {
+                    yearInput.value = 'ยังไม่เข้าศึกษา';
+                } else {
+                    yearInput.value = academicYear;
+                }
+                
+                console.log('Student ID:', studentId, 'Year Prefix:', yearPrefix, 'Current Year Prefix:', currentYearPrefix, 'Year Diff:', yearDiff, 'Academic Year:', academicYear);
+            } else {
+                yearInput.value = '';
+            }
+        } catch (error) {
+            console.error('เกิดข้อผิดพลาดในการคำนวณปีการศึกษา:', error);
+            yearInput.value = '';
+            alert('เกิดข้อผิดพลาดในการคำนวณปีการศึกษา กรุณาตรวจสอบรหัสนิสิต');
+        }
+    });
+
+    // Faculty change - load majors
+    document.getElementById('Faculty').addEventListener('change', async function() {
+        const facultyId = this.value;
+        const majorsSelect = document.getElementById('Majors');
+        
+        console.log('Faculty selected:', facultyId);
+        
+        // Clear current options
+        majorsSelect.innerHTML = '<option value="" disabled selected>-- กรุณาเลือกสาขา --</option>';
+        
+        if (facultyId) {
+            try {
+                console.log('Fetching majors from:', `/api/majors/${facultyId}`);
+                const response = await fetch(`/api/majors/${facultyId}`);
+                console.log('Response status:', response.status);
+                
+                const majors = await response.json();
+                console.log('Majors received:', majors);
+                
+                if (majors.error) {
+                    console.error('API Error:', majors.error, majors.details);
+                    alert('ไม่สามารถโหลดข้อมูลสาขาได้: ' + (majors.details || majors.error));
+                    return;
+                }
+                
+                majors.forEach(major => {
+                    const option = document.createElement('option');
+                    option.value = major.Majors_id;
+                    option.textContent = major.majors_name;
+                    majorsSelect.appendChild(option);
+                });
+                
+                console.log('Loaded', majors.length, 'majors');
+            } catch (error) {
+                console.error('Error loading majors:', error);
+                alert('ไม่สามารถโหลดข้อมูลสาขาได้: ' + error.message);
+            }
         }
     });
 </script>

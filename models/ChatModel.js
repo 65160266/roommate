@@ -1,7 +1,11 @@
+/**
+ * ChatModel - จัดการแชทส่วนตัวในฐานข้อมูล
+ */
+
 const pool = require("../config/database");
 
 const Chat = {
-  // Get or create chat room between two users
+  // ดึงหรือสร้างห้องแชทระหว่างผู้ใช้ 2 คน
   getOrCreateChatRoom: async (user1_id, user2_id) => {
     try {
       console.log('Getting or creating chat room for users:', user1_id, user2_id);

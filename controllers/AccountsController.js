@@ -1,8 +1,13 @@
+/**
+ * AccountsController - จัดการข้อมูลผู้ใช้และโปรไฟล์
+ */
+
 const cloudinary = require("../config/cloudinary");
 const Account = require("../models/AccountModel");
 const pool = require("../config/database");
+const db = require("../config/database");
 
-//แสดงหน้า accounts เฉพาะผู้ใช้ใหม่ที่ยังไม่กรอกข้อมูล
+// แสดงหน้ากรอกข้อมูลผู้ใช้ครั้งแรก
 exports.getAccount = async (req, res) => {
   const Register_id = req.session.user?.Register_id;
   if (!Register_id) {
@@ -10,6 +15,18 @@ exports.getAccount = async (req, res) => {
   }
   
   try {
+    // ตรวจสอบว่าเป็นแอดมินหรือไม่
+    const [adminCheck] = await db.execute(`
+      SELECT is_admin FROM Register WHERE Register_id = ? AND is_admin = TRUE
+    `, [Register_id]);
+    
+    // ถ้าเป็นแอดมิน → redirect ไปหน้า admin
+    if (adminCheck.length > 0) {
+      console.log('getAccount - User is admin, redirecting to admin panel');
+      req.session.user.isAdmin = true;
+      return res.redirect("/admin");
+    }
+    
     // ตรวจสอบว่าผู้ใช้มีข้อมูลแล้วหรือยัง
     const rows = await Account.queryaccount(Register_id);
     console.log('getAccount - Account check result:', rows);
@@ -23,7 +40,10 @@ exports.getAccount = async (req, res) => {
     
     // ถ้ายังไม่มีข้อมูล → แสดงหน้า accounts
     console.log('getAccount - User has no account data, showing accounts page');
-    return res.render("accounts", { userData: null });
+    return res.render("accounts", { 
+      userData: null,
+      session: req.session
+    });
   } catch (err) {
     console.error("Error loading accounts page:", err);
     return res.status(500).json({
@@ -190,7 +210,10 @@ exports.showEditProfile = async (req, res) => {
     // เพิ่มข้อมูล personality ลงใน account object
     account.personalities = personalities;
 
-    res.render("edit-profile", { userData: account });
+    res.render("edit-profile", { 
+      userData: account,
+      session: req.session
+    });
   } catch (err) {
     console.error("Show edit profile error:", err);
     res.status(500).send("Internal server error");
@@ -212,8 +235,8 @@ exports.updateProfile = async (req, res) => {
       age, 
       gender, 
       status, 
-      faculty_id, 
-      majors_id, 
+      Faculty_id, 
+      Majors_id, 
       Personality_id 
     } = req.body;
     
@@ -253,8 +276,8 @@ exports.updateProfile = async (req, res) => {
         age ?? null,
         gender ?? null,
         status ?? null,
-        faculty_id ?? null,
-        majors_id ?? null,
+        Faculty_id ?? null,
+        Majors_id ?? null,
         secure_url,
         Register_id
       ]
@@ -304,5 +327,69 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
+// API: Get majors by faculty
+exports.getMajorsByFaculty = async (req, res) => {
+  try {
+    const { facultyId } = req.params;
+    console.log('Fetching majors for faculty:', facultyId);
+    
+    // ใช้ subquery เพื่อเลือก Majors_id ที่เล็กที่สุดของแต่ละชื่อสาขา
+    const [majors] = await db.execute(
+      `SELECT m.Majors_id, m.majors_name 
+       FROM Majors m
+       INNER JOIN (
+         SELECT MIN(Majors_id) as min_id, majors_name
+         FROM Majors
+         WHERE Faculty_id = ?
+         GROUP BY majors_name
+       ) AS unique_majors ON m.Majors_id = unique_majors.min_id
+       ORDER BY m.majors_name`,
+      [facultyId]
+    );
+    
+    console.log('Found majors:', majors.length);
+    console.log('Majors list:', majors.map(m => m.majors_name));
+    res.json(majors);
+  } catch (error) {
+    console.error('Error fetching majors:', error);
+    res.status(500).json({ error: 'Failed to fetch majors', details: error.message });
+  }
+};
 
+// Get user profile by ID (for viewing in group chat)
+exports.getUserProfile = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Get user data with faculty and major names
+    const [users] = await db.execute(`
+      SELECT a.*, f.faculty_name, m.majors_name
+      FROM Accounts a
+      LEFT JOIN Faculty f ON a.Faculty_id = f.Faculty_id
+      LEFT JOIN Majors m ON a.Majors_id = m.Majors_id
+      WHERE a.Accounts_id = ?
+    `, [userId]);
+    
+    if (users.length === 0) {
+      return res.json({ success: false, message: 'ไม่พบข้อมูลผู้ใช้' });
+    }
+    
+    const user = users[0];
+    
+    // Get user's personalities
+    const [personalities] = await db.execute(`
+      SELECT p.description
+      FROM Personality p
+      JOIN Accounts_has_Personality ap ON p.Personality_id = ap.Personality_id
+      WHERE ap.Accounts_id = ?
+    `, [userId]);
+    
+    user.personalities = personalities.map(p => p.description);
+    
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้' });
+  }
+};
 

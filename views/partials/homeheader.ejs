@@ -12,6 +12,9 @@
         <nav class="header-nav">
             <a href="/home" class="nav-link">หน้าแรก</a>
             <a href="/chat" class="nav-link">แชท</a>
+            <% if (typeof session !== 'undefined' && session.user && session.user.isAdmin) { %>
+                <a href="/admin" class="nav-link" style="color: #dc2626; font-weight: 600;">Admin Panel</a>
+            <% } %>
         </nav>
 
         <!-- Profile & Logout -->
